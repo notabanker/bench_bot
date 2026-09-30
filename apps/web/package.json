@@ -1,0 +1,6 @@
+{
+  "name": "@bench_bot/web",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts"
+}

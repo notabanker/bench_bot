@@ -1,0 +1,6 @@
+packages:
+  - kernel
+  - services
+  - providers
+  - harnesses
+  - apps/*

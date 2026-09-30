@@ -20,7 +20,8 @@ Electron (macOS/Windows/Ubuntu), one harness server on `127.0.0.1`, Node ≥24, 
   `ProviderAdapter` (`sendTurn`/`interruptTurn`/`respondToRequest`/`steer`/`onEvent`/
   `stopAll`/`hasSession`), `ProviderSnapshot`, `EngineInstall`, `ModelCatalog`.
 - Implementations: `server/drivers/*` — one file per engine (`claude.ts`, `codex.ts`,
-  `grok.ts`, `cursor.ts`, `openai-compat.ts`, `openai-chat.ts`, `acp/core.ts`, …).
+  `grok.ts`, `openai-compat.ts`, `openai-chat.ts`, `acp/core.ts`, `acp/cursor.ts`, `acp/opencode-go.ts`, …).
+  `server/drivers/builtIn.ts` registers 18 drivers in one static array (re-checked 2026-09-30, commit `2ea6413`).
 - Registry: `server/harness/registry.ts` — `ProviderRegistry` maps config → live instances;
   unknown driver or decode failure becomes an "unavailable shadow snapshot" instead of a
   startup failure (forward/backward-compatible settings). Event bus: `server/harness/bus.ts`,
@@ -52,6 +53,21 @@ Electron (macOS/Windows/Ubuntu), one harness server on `127.0.0.1`, Node ≥24, 
   `steered/refused/indeterminate`); `interruptTurn()` aborts.
 - Multi-agent/delegation: `server/room-handoffs.ts`, `server/delegations.ts`,
   `server/peer-roster.ts`/`peer-delivery.ts`, room routing `server/decider/room-routing.ts`.
+
+**Also noted (2026-09-30):**
+- Shape: a local harness server (`node:http`, `127.0.0.1:8799`) + React app (`:5199`) that holds no
+  transports of its own — HTTP commands in, one SSE stream out. Electron embeds the same server.
+  This is the shape bench_bot copies.
+- `server/drivers/openai-chat.ts` is its own chat-completions tool loop for API-only engines — the
+  counterpart of our `generic-loop`.
+- Agent-to-agent tools are served by an `agents` MCP proxy started inside each bot's CLI
+  (`server/drivers/agents-proxy.ts`), routed back to the server so it stays the single owner of
+  turns, permissions and recursion limits. Tools: `list_bots`, `ask_bot` (sync, becomes async if
+  slow), `delegate_bot` (async, result delivered back), `check_delegation`, `wait_delegation`,
+  `coordinate_bots` (1–4 bots) (`server/drivers/agents-catalog.ts`).
+- OpenCode runs as `opencode acp`; OpenMausBot leaves OpenCode's own login (`auth.json`) to the CLI
+  and only injects `OPENCODE_API_KEY` (`docs/opencode-go.md`).
+- Warning: `server/index.ts` is 23,453 lines — the god object our rules forbid.
 
 **(5) Three ideas worth adopting.**
 1. Driver-as-record SPI + capability flags (`server/contracts.ts` `ProviderAdapter.capabilities`)

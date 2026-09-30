@@ -2,7 +2,7 @@
 
 Clean-room map of `/tmp/ref-openbot` (OpenBot v0.26.0, "local-first multi-agent desktop workspace"). Bun + Electron + SolidJS, monorepo (workspaces `apps/*`, `packages/*`, `remote/api`). All paths relative to repo root. Read-only source; ideas below, never code.
 
-> Correction to a prior assumption: agents do **not** run `approvalPolicy: "never"` / `danger-full-access` unconditionally. Current code sends `approvalPolicy: "on-request"` on every `turn/start` (`src/backend/agent/drain-scheduler.ts:414`, `thread-lifecycle.ts:335,564`) and a sandbox policy from `src/backend/agent/workspace-sandbox.ts` — `workspace-write` when workspace access is enforced, `danger-full-access` otherwise. `approvalPolicy: "never"` survives only in `profile-generation.ts:114` (a profile prompt, not a turn). Approvals surface through `AttentionRegistry`/`OpenBotToolRouter` and may be auto-approved by an `ApprovalAutomationPolicy` (`approval-automation.ts`, the "Turbo" feature).
+> Note: OpenBot's own README still says agents run with `approvalPolicy: never`; the code disagrees: agents do **not** run `approvalPolicy: "never"` / `danger-full-access` unconditionally. Current code sends `approvalPolicy: "on-request"` on every `turn/start` (`src/backend/agent/drain-scheduler.ts:414`, `thread-lifecycle.ts:335,564`) and a sandbox policy from `src/backend/agent/workspace-sandbox.ts` — `workspace-write` when workspace access is enforced, `danger-full-access` otherwise. `approvalPolicy: "never"` survives only in `profile-generation.ts:114` (a profile prompt, not a turn). Approvals surface through `AttentionRegistry`/`OpenBotToolRouter` and may be auto-approved by an `ApprovalAutomationPolicy` (`approval-automation.ts`, the "Turbo" feature).
 
 ---
 
@@ -147,9 +147,9 @@ Everything flows through the **mailbox**; there is no direct agent→agent chann
 ## 7. What we deliberately do differently (bench_bot)
 
 - **No event-sourcing for the mailbox.** OpenBot's append-only `orchestration_events` + projection replay is powerful but heavy (whole-database text-substitution migrations, parity tests). bench_bot writes direct relational state; migrations are plain, non-replaying DDL.
-- **One provider, not a seven-provider matrix.** We target a single CLI/RPC adapter shape; no per-provider `*CliInfo`/driver union, no managed-vs-system binary resolution, no provider-idle-process juggling.
+- **Few harnesses, open source only.** v1: our generic loop, OpenCode (over ACP) and Prime Agent. No Claude Code (proprietary). No per-provider `*CliInfo`/driver union, no managed-vs-system binary resolution, no provider-idle-process juggling. OpenBot also normalizes everything into the Codex app-server protocol (`AgentClient` in `src/backend/agent-client.ts`; `claude-client.ts` wraps `@anthropic-ai/claude-agent-sdk` and re-emits Codex-style notifications); we use our own small chunk union instead.
 - **Plain approval model.** No `AttentionRegistry` request-method zoo, no "Turbo" auto-approval policy; we keep a single explicit approval channel.
-- **No Electron.** Backend stays a headless process; UI is a thin client. No `src/main`/`src/preload`/`src/renderer` split, no CDP-via-WebContents browser host.
+- **Thin Electron.** We ship an Electron app too, but the backend is a local HTTP + SSE server and Electron only opens the window. No `src/main`/`src/preload`/`src/renderer` IPC split, no CDP-via-WebContents browser host.
 - **Computer-use out of scope for v1.** Desktop control is a later plugin, not a bundled daemon with macOS grant attribution.
 - **Threads/sessions:** keep the public↔external id split (it's the single most reusable idea here) but drop the in-memory snapshot/delta-buffer dual-write in favor of one source of truth.
 - **Agent↔agent:** keep the mailbox fan-out + held-reply fan-in, but make `expectsReply`/idempotency keys first-class in the API rather than derived from message shape.

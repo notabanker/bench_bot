@@ -193,7 +193,6 @@ Goal: a side panel where a bot's "computer" will later show. A placeholder image
 
 - **Q1** (before Phase 8) Starter bots: names, what each one does, which model each uses.
   What exactly should the Finance bot do?
-- **Q2** (before Phase 3) D4: save the current state directly (planned) instead of replaying a full
-  history like OpenBot?
-- **Q3** (any time) License: `CLAUDE.md` says "no licensing", the README says MIT/Apache-2.0.
-- **Q4** (any time) README "EU-built" line: keep or remove (`CLAUDE.md` says "no company story")?
+- ~~Q2~~ answered: save state directly + event log (simple).
+- ~~Q3~~ answered: license left unset for now.
+- ~~Q4~~ answered: "EU-built" pitch removed from the README.

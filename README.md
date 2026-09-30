@@ -1,6 +1,6 @@
 # bench_bot
 
-**EU-built, genuinely open-source alternative to OpenBot / OpenMausBot — same approach, our own code.**
+**A desktop chat app where each contact is an AI bot — learning build, our own code.**
 
 A local-first workspace where named bots are contacts: each bot gets its own thread, its own
 workspace, its own tools, and a **swappable harness** (OpenCode, Prime Agent, or our own generic
@@ -19,9 +19,9 @@ Phase 0 done. No application code yet. The build follows [`plan.md`](plan.md), o
 
 ## Why
 
-- OpenBot and OpenMausBot are US-built. bench_bot is the EU one.
-- OpenBot is **not** open source — it ships under PolyForm Noncommercial 1.0.0, which bars
-  commercial use. bench_bot aims to be genuinely open source (MIT / Apache-2.0).
+- Learn the product shape of OpenBot / OpenMausBot by building it ourselves.
+- OpenBot ships under PolyForm Noncommercial 1.0.0, so its code must never be copied.
+  bench_bot's own license is not chosen yet.
 - Same product shape, different code, different UI. Read the references, never copy them.
 
 ## References (read-only, cloned to `/tmp` during Phase 0)

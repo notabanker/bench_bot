@@ -207,7 +207,6 @@ Confirmed by the user on 2026-09-30:
 - **D2** ✅ Storage: Node's built-in `node:sqlite` (no native module to rebuild for Electron;
   both reference apps use it). Hono + Vite/React unchanged.
 
-Still open:
-
-- **D4** Direct relational state, no event-sourced projections.
-- **D5** Repo is `notabanker/bench_bot`; license still unset.
+- **D4** ✅ Direct relational state + append-only event log; no event-sourced projections.
+- **D5** ✅ Repo is `notabanker/bench_bot`; license deliberately left unset for now.
+- **D11** ✅ README carries no company story (no "EU-built" pitch).

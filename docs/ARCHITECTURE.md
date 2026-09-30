@@ -1,10 +1,10 @@
-# Hoster — Architecture
+# bench_bot — Architecture
 
 Our design. Written after reading the reference repos (see `openbot-map.md`,
 `reference-notes.md`). We copy the *shape*, never the code: OpenBot is PolyForm
 Noncommercial, so clean-room is a legal requirement, not a preference.
 
-## 1. What Hoster is
+## 1. What bench_bot is
 
 A local-first workspace where **bots are contacts**. Each bot has a thread, its own
 workspace directory, its own tools, and a **swappable harness**. Bots can ask other bots.

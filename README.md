@@ -1,4 +1,4 @@
-# Hoster
+# bench_bot
 
 **EU-built, genuinely open-source alternative to OpenBot / OpenMausBot — same approach, our own code.**
 
@@ -19,9 +19,9 @@ Phase 0 — reference scan. No application code yet, by design.
 
 ## Why
 
-- OpenBot and OpenMausBot are US-built. Hoster is the EU one.
+- OpenBot and OpenMausBot are US-built. bench_bot is the EU one.
 - OpenBot is **not** open source — it ships under PolyForm Noncommercial 1.0.0, which bars
-  commercial use. Hoster aims to be genuinely open source (MIT / Apache-2.0).
+  commercial use. bench_bot aims to be genuinely open source (MIT / Apache-2.0).
 - Same product shape, different code, different UI. Read the references, never copy them.
 
 ## References (read-only, cloned to `/tmp` during Phase 0)

@@ -144,9 +144,9 @@ Everything flows through the **mailbox**; there is no direct agent→agent chann
 
 ---
 
-## 7. What we deliberately do differently (Hoster)
+## 7. What we deliberately do differently (bench_bot)
 
-- **No event-sourcing for the mailbox.** OpenBot's append-only `orchestration_events` + projection replay is powerful but heavy (whole-database text-substitution migrations, parity tests). Hoster writes direct relational state; migrations are plain, non-replaying DDL.
+- **No event-sourcing for the mailbox.** OpenBot's append-only `orchestration_events` + projection replay is powerful but heavy (whole-database text-substitution migrations, parity tests). bench_bot writes direct relational state; migrations are plain, non-replaying DDL.
 - **One provider, not a seven-provider matrix.** We target a single CLI/RPC adapter shape; no per-provider `*CliInfo`/driver union, no managed-vs-system binary resolution, no provider-idle-process juggling.
 - **Plain approval model.** No `AttentionRegistry` request-method zoo, no "Turbo" auto-approval policy; we keep a single explicit approval channel.
 - **No Electron.** Backend stays a headless process; UI is a thin client. No `src/main`/`src/preload`/`src/renderer` split, no CDP-via-WebContents browser host.

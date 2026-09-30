@@ -148,5 +148,9 @@ Do not copy their source, CSS, assets, or component trees. UI should feel like a
 - If a reference file helps, note the path in the map doc and rewrite.
 - Prefer a working generic loop over a perfect OpenCode integration.
 - Stop and ask only if the target stack should change.
+- Safety: bots may do almost everything without asking, but never break the Mac or the app
+  (folder limits + block list, refuse and note in chat). See `docs/ARCHITECTURE.md` §7a.
 
-Phase 0 is done (see `docs/`). Next: step 2, kernel + service registry.
+Phase 0 is done (see `docs/`). The build now follows **`plan.md`**, phase by phase: finish a
+phase, tick it off, commit, report in plain words, then **wait for the user's OK** before the next
+phase. The user is partly technical: explain choices in plain language.

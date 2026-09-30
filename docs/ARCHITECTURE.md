@@ -36,6 +36,7 @@ apps/desktop/ Electron shell: starts apps/api, opens apps/web in a window
 | `delegation` | `list_bots()` / `ask_bot(botId, text)` | mailbox over SQLite |
 | `fs` | `read` / `write` / `list` scoped to a bot workspace | local |
 | `queue` | `enqueue(msg)` / `drain(botId)` / `pause` | per-bot FIFO, one live turn per bot |
+| `policy` | `check(action, ctx) -> allow \| block(reason)` | folder limits + block list (§7a) |
 
 Rule: **interfaces before implementations**, and never a god object. `AgentService` does not exist here.
 
@@ -90,8 +91,11 @@ there is no Grok harness. Swapping a bot's harness must be a one-line edit.
 | Harness | How it runs | Status |
 |---|---|---|
 | `generic-loop` | our own loop in-process; calls `llm` over HTTP (OpenCode Go key, `OPENCODE_API_KEY`) | real |
-| `opencode` | starts the `opencode` program (MIT) and talks to it over ACP (`opencode acp`, as both references do) | stub → real |
-| `prime-agent` | starts the `prime-agent` program (MIT, Rust). Exact integration path not yet checked | stub → real |
+| `opencode` | starts `opencode acp` (MIT) and talks ACP over stdio, as both references do | stub → real |
+| `prime-agent` | starts `prime-agent --mode acp` (MIT, Rust) — same ACP transport (`crates/pa-cli/src/args.rs`, `crates/pa-daemon/src/acp/mod.rs`); its built-in `opencode-go` provider reads `OPENCODE_API_KEY` (`crates/pa-ai/src/env_api_keys.rs`) | stub → real |
+
+Both outside programs speak ACP, so they share **one ACP adapter** with a per-program config
+(command, args, env). Checked against prime-agent commit `839949b`, 2026-09-30.
 
 Later, same pattern: Codex CLI (Apache-2.0), Gemini CLI (Apache-2.0). Claude Code is
 excluded (proprietary). Because OpenCode and Gemini both speak ACP, the `opencode` adapter
@@ -147,6 +151,25 @@ user-facing; `runs.harness_session_id` is whatever the CLI calls its own session
 7. **Mailbox semantics are in the API:** `expectsReply` and idempotency keys are explicit
    parameters, not derived from message shape.
 
+## 7a. Safety policy (confirmed 2026-09-30)
+
+Bots may do almost everything **without asking**. Two layers stop the few things that could break
+the Mac or bench_bot itself:
+
+1. **Folder limits.** A bot may write inside its own workspace and the user's normal folders. It may
+   not write macOS system folders, the bench_bot app, or bench_bot's data folder (so it cannot edit
+   its own rules). Outside programs (`opencode`, `prime-agent`) run inside the macOS sandbox
+   (`/usr/bin/sandbox-exec`, a Seatbelt profile), so the limits also cover any script or command
+   they start. Idea from OpenBot `src/backend/process-confinement.ts`; our own profile.
+2. **Block list.** Refuse `sudo`, disk erase/format tools, deletes of system paths, shutdown and
+   system-setting changes — checked on every command or permission request we see.
+
+When something is blocked: refuse, tell the bot why, and put a short note in the chat. No pop-up.
+
+Honest limits: the block list only sees commands that pass through us; the sandbox is what makes
+the folder limits hold. Apple labels `sandbox-exec` deprecated, but it is present on current macOS
+and OpenBot relies on it. Mac first; Linux/Windows confinement is not planned for v1.
+
 ## 8. Stack
 
 TypeScript · pnpm workspaces · **Hono** (HTTP + SSE) · **`node:sqlite`** (built into Node) ·
@@ -165,6 +188,9 @@ Vite + React (own UI: dense, mail-like, own type and colour — not their compon
 8. opencode / prime-agent harnesses (stub → real)
 9. computer pane (placeholder screenshot)
 
+The detailed, phase-by-phase version of this order (with the safety phase before the outside
+programs) is `plan.md`.
+
 ## 10. Decisions a human should confirm
 
 Confirmed by the user on 2026-09-30:
@@ -175,6 +201,9 @@ Confirmed by the user on 2026-09-30:
 - **D6** ✅ Default model source: OpenCode Go subscription. `generic-loop` calls it directly;
   `opencode` uses the same key. Orchestrator runs on `opencode`.
 - **D7** ✅ Name: bench_bot.
+- **D8** ✅ Safety: folder limits + block list, refuse + note in chat, no confirmation pop-ups (§7a).
+- **D9** ✅ macOS first. Real AI tested on the user's Mac; the cloud build uses a fake AI.
+- **D10** ✅ Build follows `plan.md`; stop for the user's OK after each phase.
 - **D2** ✅ Storage: Node's built-in `node:sqlite` (no native module to rebuild for Electron;
   both reference apps use it). Hono + Vite/React unchanged.
 

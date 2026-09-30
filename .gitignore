@@ -12,3 +12,9 @@ build/
 coverage/
 __pycache__/
 .venv/
+
+# bench_bot local data (never commit chats, bot work folders or app builds)
+data/
+bots/*/workspace/
+out/
+release/

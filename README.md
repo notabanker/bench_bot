@@ -10,7 +10,7 @@ agent loop — open-source harnesses only). Models come from an OpenCode Go subs
 
 ## Status
 
-Phase 0 done. No application code yet; next is step 2 (kernel + service registry).
+Phase 0 done. No application code yet. The build follows [`plan.md`](plan.md), one phase at a time.
 
 - [x] `CLAUDE.md` — the build instruction (read this first)
 - [x] `docs/openbot-map.md` — architectural map of the reference project

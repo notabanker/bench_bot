@@ -17,6 +17,22 @@ Phase 0 done. No application code yet. The build follows [`plan.md`](plan.md), o
 - [x] `docs/reference-notes.md` — OpenMausBot, deepseek-harness, prime-agent
 - [x] `docs/ARCHITECTURE.md` — our own design
 
+## How to run
+
+Needs **Node 22.13 or newer** and **pnpm 10** (on a Mac: `brew install node pnpm`, or use
+`corepack enable`).
+
+```bash
+pnpm install      # install tools
+pnpm test         # run the tests
+pnpm typecheck    # check the TypeScript types
+pnpm lint         # check formatting and common mistakes
+pnpm format       # fix formatting
+```
+
+For real AI answers later: copy `.env.example` to `.env` and put your OpenCode Go key in it.
+`.env` is never committed.
+
 ## Why
 
 - Learn the product shape of OpenBot / OpenMausBot by building it ourselves.

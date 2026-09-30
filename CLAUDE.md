@@ -8,7 +8,8 @@ a chat app with a roster of named bots, each with a thread, tools, and
 optionally a computer. Different bots can run different harnesses.
 
 Do **not** set up licensing, hosting, billing, GDPR, Kubernetes, or a company
-story. Local docker compose or even just `pnpm dev` is enough.
+story. `pnpm dev` is enough to run it; the app ships as an **Electron desktop app** from the
+start (a thin shell around the same local server + React UI).
 
 ## What to build
 
@@ -22,15 +23,29 @@ A messaging UI + a small kernel where:
 
 Example binding (config, not hardcoded):
 
-- Orchestrator → Claude Code harness
+- Orchestrator → OpenCode harness
 - Finance → Prime Agent harness, a different model than Orchestrator
-- Grok bot → Grok CLI harness
+- Grok bot → generic loop or OpenCode, with a Grok model from OpenCode Go (no separate Grok harness)
 - Fallback / simple bots → our own generic agent loop
 
-Harness surface we want parity with (OpenBot runs these; ours must be swappable):
-Codex · Claude Code · **Grok CLI** · OpenCode · Gemini · Cursor — plus any custom
-OpenAI-compatible endpoint and local servers (Ollama, LM Studio). Each bot picks its own
-harness **and its own model**; that pairing is config, never hardcoded.
+**Open-source harnesses only.** A harness is the program that runs a bot's turn. We only
+integrate harnesses whose code is open source, so integration is easier and nothing
+proprietary sits in the loop. The *models* behind them may still be closed (GPT, Grok, …).
+
+| Harness | License | v1? |
+|---|---|---|
+| generic-loop (ours) | ours | **yes** — calls an OpenAI-compatible HTTP endpoint directly |
+| OpenCode | MIT | **yes** — runs the `opencode` program |
+| Prime Agent | MIT | **yes** — runs the `prime-agent` program |
+| Codex CLI | Apache-2.0 | later |
+| Gemini CLI | Apache-2.0 | later |
+| Claude Code | proprietary ("All rights reserved") | **no** |
+| Cursor CLI | not checked | not planned |
+
+Default model source is **OpenCode Go** (subscription, `https://opencode.ai/zen/go/v1`).
+The generic loop calls it directly with the Go key; the OpenCode harness uses the same key.
+The same generic-loop code must also work with local servers (Ollama, LM Studio) later.
+Each bot picks its own harness **and its own model**; that pairing is config, never hardcoded.
 
 Formula: **Bot = identity + instructions + model + harness + tools**
 
@@ -39,15 +54,16 @@ Formula: **Bot = identity + instructions + model + harness + tools**
 Everything outside the model is a Service.
 
 ```
-hoster/
+bench_bot/
   kernel/       # tiny DI: register service, get service
   services/     # interfaces only
   providers/    # implementations
-  harnesses/    # claude-code, prime-agent, generic-loop
+  harnesses/    # generic-loop, opencode, prime-agent
   bots/         # yaml or json bot defs
   apps/
     api/
     web/
+    desktop/    # Electron shell around api + web
 ```
 
 Minimum seams:
@@ -76,7 +92,12 @@ interface Harness {
 
 `BotRunContext` has bot id, workspace path, tool policy, model id, session log.
 
-If Claude Code or Prime Agent CLIs are missing, **stub the harness**: log the prompt, return a fake stream, keep the interface real. The generic-loop harness must actually call an LLM if an API key exists (`.env`: `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`).
+If the OpenCode or Prime Agent programs are missing, **stub the harness**: log the prompt, return a fake stream, keep the interface real. The generic-loop harness must actually call an LLM if a key exists (`.env`: `OPENCODE_API_KEY`, the OpenCode Go key; `LLM_BASE_URL` defaults to `https://opencode.ai/zen/go/v1` and can point at Ollama / LM Studio instead).
+
+Caveat (per opencode.ai/docs/go, read 2026-09-30): Go serves most models on the OpenAI-style
+`/chat/completions` endpoint, some on an Anthropic-style `/messages` endpoint, and Grok on a
+`/responses` endpoint. The v1 generic loop speaks `/chat/completions` only; models on the other
+endpoints go through the OpenCode harness until the loop learns them.
 
 ## Phase 0 — scan OpenBot, then stop and write a map
 
@@ -111,13 +132,13 @@ Do not copy their source, CSS, assets, or component trees. UI should feel like a
 2. Kernel + service registry
 3. Session log + generic-loop harness + one LLM provider
 4. API: bots, threads, send message, SSE/stream events
-5. Web UI: sidebar roster + thread + composer
+5. Web UI: sidebar roster + thread + composer, opened inside the Electron shell (`apps/desktop`)
 6. Bot yaml + `harness` field on each bot
 7. Delegation tool so orchestrator can ask finance
-8. Stub or real claude-code / prime-agent adapters
+8. Stub or real opencode / prime-agent adapters
 9. Only then: a dumb computer pane (screenshot placeholder is fine)
 
-**Stack:** TypeScript, pnpm, Vite + React, a small HTTP server (Hono or Fastify). SQLite is fine. No extra infra.
+**Stack:** TypeScript, pnpm, Vite + React, a small HTTP server (Hono or Fastify), Electron for the desktop shell. SQLite via Node's built-in `node:sqlite`. No extra infra.
 
 ## Working rules
 
@@ -125,7 +146,7 @@ Do not copy their source, CSS, assets, or component trees. UI should feel like a
 - Interfaces before implementations.
 - No god-object `AgentService`.
 - If a reference file helps, note the path in the map doc and rewrite.
-- Prefer a working generic loop over a perfect Claude Code integration.
+- Prefer a working generic loop over a perfect OpenCode integration.
 - Stop and ask only if the target stack should change.
 
-Start with **Phase 0**.
+Phase 0 is done (see `docs/`). Next: step 2, kernel + service registry.

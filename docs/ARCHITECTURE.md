@@ -20,18 +20,19 @@ a provider×login matrix, enterprise approvals.
 kernel/      tiny DI: register(name, service) / get(name). No globals, no decorators.
 services/    interfaces only — no implementation may be imported from here
 providers/   implementations, one file per backend
-harnesses/   the harness implementations (the one place a model/CLI meeting happens)
+harnesses/   generic-loop, opencode, prime-agent (the one place a model/CLI meeting happens)
 bots/        bot definitions (yaml)
 apps/api/    HTTP + SSE
 apps/web/    sidebar roster + thread + composer
+apps/desktop/ Electron shell: starts apps/api, opens apps/web in a window
 ```
 
 | Service | Interface (v0) | Provider(s) v0 |
 |---|---|---|
-| `llm` | `stream(messages, tools, signal) -> AsyncIterable<Chunk>` | OpenAI-compatible (one impl) |
-| `session` | `append(threadId, event)` / `read(threadId)` / `resume(threadId)` | SQLite |
+| `llm` | `stream(messages, tools, signal) -> AsyncIterable<Chunk>` | OpenAI-compatible `/chat/completions` (one impl; default base URL OpenCode Go, also Ollama / LM Studio) |
+| `session` | `append(threadId, event)` / `read(threadId)` / `resume(threadId)` | SQLite (`node:sqlite`) |
 | `tool` | `schema()` / `run(call, ctx)` | host tools: `fs.*`, `ask_bot`, `list_bots` |
-| `harness` | `start` / `send` / `abort` / `capabilities` | `generic-loop`, `claude-code*`, `grok*`, `prime-agent*` (\*stub first) |
+| `harness` | `start` / `send` / `abort` / `capabilities` | `generic-loop`, `opencode*`, `prime-agent*` (\*stub first) |
 | `delegation` | `list_bots()` / `ask_bot(botId, text)` | mailbox over SQLite |
 | `fs` | `read` / `write` / `list` scoped to a bot workspace | local |
 | `queue` | `enqueue(msg)` / `drain(botId)` / `pause` | per-bot FIFO, one live turn per bot |
@@ -74,14 +75,31 @@ section: Research
 instructions: |
   You are the finance bot...
 model: <model-id>
-harness: prime-agent      # generic-loop | claude-code | grok | prime-agent
+harness: prime-agent      # generic-loop | opencode | prime-agent
 tools: [fs.read, fs.write, ask_bot]
 workspace: ./bots/finance/workspace
 access: workspace-only     # or 'full'
 ```
 
-The Orchestrator→Claude Code / Finance→prime-agent / Grok→Grok CLI pairing lives here,
-in yaml. Swapping a bot's harness must be a one-line edit.
+The Orchestrator→opencode / Finance→prime-agent / simple bots→generic-loop pairing lives
+here, in yaml. A "Grok bot" is just a bot whose `model` is a Grok model from OpenCode Go;
+there is no Grok harness. Swapping a bot's harness must be a one-line edit.
+
+### Harnesses in v1 (open source only)
+
+| Harness | How it runs | Status |
+|---|---|---|
+| `generic-loop` | our own loop in-process; calls `llm` over HTTP (OpenCode Go key, `OPENCODE_API_KEY`) | real |
+| `opencode` | starts the `opencode` program (MIT) and talks to it over ACP (`opencode acp`, as both references do) | stub → real |
+| `prime-agent` | starts the `prime-agent` program (MIT, Rust). Exact integration path not yet checked | stub → real |
+
+Later, same pattern: Codex CLI (Apache-2.0), Gemini CLI (Apache-2.0). Claude Code is
+excluded (proprietary). Because OpenCode and Gemini both speak ACP, the `opencode` adapter
+should be written as a generic ACP adapter with an OpenCode config, not a one-off.
+
+Known limit: OpenCode Go serves Grok on a `/responses` endpoint and some models on an
+Anthropic-style `/messages` endpoint (opencode.ai/docs/go, read 2026-09-30). The v1
+`generic-loop` only speaks `/chat/completions`; those models go through `opencode`.
 
 ## 5. Message → turn
 
@@ -116,11 +134,12 @@ user-facing; `runs.harness_session_id` is whatever the CLI calls its own session
 
 ## 7. Deliberate differences from OpenBot
 
-1. **No Electron in v1.** Headless backend + thin web client. A desktop wrapper (Tauri/Electron)
-   around the same HTTP API is a later, optional shell.
+1. **Thin Electron shell, fat local server.** The desktop app is Electron from the start, but it
+   only opens a window on the React UI and starts the local server. All logic stays in the server
+   (HTTP + SSE), like OpenMausBot and unlike OpenBot's main/preload/renderer IPC split.
 2. **No event-sourced projections.** Direct relational writes + a plain append-only event log.
    Migrations are plain DDL, not replay-based text substitution.
-3. **Small harness set, honest stubs.** Four harnesses, stub implementations that keep the
+3. **Small harness set, open source only, honest stubs.** Three harnesses in v1; stubs keep the
    real interface and log the prompt instead of pretending.
 4. **One explicit approval channel.** No attention registry, no auto-approve "Turbo" policy.
 5. **Tools are ours, not a namespace zoo.** v0 ships `fs.*`, `list_bots`, `ask_bot` only.
@@ -130,9 +149,9 @@ user-facing; `runs.harness_session_id` is whatever the CLI calls its own session
 
 ## 8. Stack
 
-TypeScript · pnpm workspaces · **Hono** (HTTP + SSE) · **better-sqlite3** ·
-Vite + React (own UI: dense, mail-like, own type and colour — not their component tree).
-Node ≥ 22. No Docker required for v0.
+TypeScript · pnpm workspaces · **Hono** (HTTP + SSE) · **`node:sqlite`** (built into Node) ·
+Vite + React (own UI: dense, mail-like, own type and colour — not their component tree) ·
+**Electron** desktop shell (`apps/desktop`). Node ≥ 22. No Docker required for v0.
 
 ## 9. Build order (matches `CLAUDE.md` step 1–9)
 
@@ -140,16 +159,26 @@ Node ≥ 22. No Docker required for v0.
 2. kernel + service registry (+ contract tests: register/get, missing-service error)
 3. session log + generic-loop harness + one LLM provider (real API call if a key exists)
 4. API: bots, threads, send message, SSE stream
-5. web: sidebar roster + thread + composer
+5. web: sidebar roster + thread + composer, shown in the Electron shell
 6. bot yaml + `harness` field
 7. `ask_bot` delegation + mailbox fan-out
-8. claude-code / grok / prime-agent harnesses (stub → real)
+8. opencode / prime-agent harnesses (stub → real)
 9. computer pane (placeholder screenshot)
 
 ## 10. Decisions a human should confirm
 
-- **D1** No Electron; headless backend + web UI (a desktop shell can wrap it later).
-- **D2** Hono + better-sqlite3 + Vite/React as the concrete stack.
-- **D3** v0 harnesses: `generic-loop` real, `claude-code`/`grok`/`prime-agent` as honest stubs.
+Confirmed by the user on 2026-09-30:
+
+- **D1** ✅ Electron desktop app from the start (thin shell, logic in the local server).
+- **D3** ✅ Open-source harnesses only: `generic-loop` real, `opencode` + `prime-agent` stub → real.
+  No Claude Code. Grok models via OpenCode Go, no Grok harness.
+- **D6** ✅ Default model source: OpenCode Go subscription. `generic-loop` calls it directly;
+  `opencode` uses the same key. Orchestrator runs on `opencode`.
+- **D7** ✅ Name: bench_bot.
+- **D2** ✅ Storage: Node's built-in `node:sqlite` (no native module to rebuild for Electron;
+  both reference apps use it). Hono + Vite/React unchanged.
+
+Still open:
+
 - **D4** Direct relational state, no event-sourced projections.
-- **D5** Repo is public under `notabanker/hoster`, license still unset (all rights reserved until we pick).
+- **D5** Repo is `notabanker/bench_bot`; license still unset.

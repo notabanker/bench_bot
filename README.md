@@ -3,19 +3,19 @@
 **EU-built, genuinely open-source alternative to OpenBot / OpenMausBot — same approach, our own code.**
 
 A local-first workspace where named bots are contacts: each bot gets its own thread, its own
-workspace, its own tools, and a **swappable harness** (Claude Code, Grok CLI, Prime Agent, or our
-own generic agent loop). Bots can delegate to each other.
+workspace, its own tools, and a **swappable harness** (OpenCode, Prime Agent, or our own generic
+agent loop — open-source harnesses only). Models come from an OpenCode Go subscription by default. Bots can delegate to each other.
 
 **Formula:** `Bot = identity + instructions + model + harness + tools`
 
 ## Status
 
-Phase 0 — reference scan. No application code yet, by design.
+Phase 0 done. No application code yet; next is step 2 (kernel + service registry).
 
 - [x] `CLAUDE.md` — the build instruction (read this first)
-- [ ] `docs/openbot-map.md` — architectural map of the reference project
-- [ ] `docs/reference-notes.md` — OpenMausBot, deepseek-harness, prime-agent
-- [ ] `docs/ARCHITECTURE.md` — our own design
+- [x] `docs/openbot-map.md` — architectural map of the reference project
+- [x] `docs/reference-notes.md` — OpenMausBot, deepseek-harness, prime-agent
+- [x] `docs/ARCHITECTURE.md` — our own design
 
 ## Why
 
@@ -31,7 +31,7 @@ Phase 0 — reference scan. No application code yet, by design.
 | `nightly-labs/openbot` | PolyForm Noncommercial 1.0.0 | **No** |
 | `milind-soni/OpenMausBot` | Apache-2.0 | with attribution |
 | `deepseek-ai/deepseek-harness` | MIT | with attribution |
-| `PrimeIntellect-ai/prime-agent` | check | check |
+| `PrimeIntellect-ai/prime-agent` | MIT | with attribution |
 
 Clean-room rule: read the architecture, write our own. No source, CSS, assets or component trees.
 
@@ -41,10 +41,11 @@ Clean-room rule: read the architecture, write our own. No source, CSS, assets or
 kernel/       tiny DI: register service, get service
 services/     interfaces only
 providers/    implementations
-harnesses/    claude-code, prime-agent, generic-loop
+harnesses/    generic-loop, opencode, prime-agent
 bots/         yaml or json bot defs
 apps/api/     HTTP + SSE
 apps/web/     sidebar roster + thread + composer
+apps/desktop/ Electron shell around api + web
 ```
 
 ## Working rules

@@ -1,8 +1,8 @@
-# Session instruction — Hoster (learning build)
+# Session instruction — bench_bot (learning build)
 
 > Save this as `CLAUDE.md` in the project folder (or paste it as the first Claude Code message).
 
-Build a new project from scratch called **Hoster**.
+Build a new project from scratch called **bench_bot**.
 It is a learning clone of the *product shape* of OpenBot / OpenMausBot:
 a chat app with a roster of named bots, each with a thread, tools, and
 optionally a computer. Different bots can run different harnesses.
@@ -99,7 +99,7 @@ Read those trees. Write `docs/openbot-map.md`:
 - how one bot talks to another
 - 10 files worth stealing ideas from (path + one-line why)
 
-Then write `docs/ARCHITECTURE.md` for Hoster (our design, not a copy of theirs).
+Then write `docs/ARCHITECTURE.md` for bench_bot (our design, not a copy of theirs).
 
 **Do not start app code before those two files exist.**
 

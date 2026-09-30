@@ -19,20 +19,20 @@ Legend: `[ ]` open · `[x]` done · **Check:** what you can look at or try yours
 
 ---
 
-## Phase 1 — Project skeleton
+## Phase 1 — Project skeleton ✅ (2026-09-30, waiting for your check)
 
 Goal: an empty but correctly set-up project that builds and runs its tests.
 
-- [ ] 1.1 Workspace setup
-  - [ ] pnpm workspace with the folders from `CLAUDE.md` (`kernel/`, `services/`, `providers/`,
+- [x] 1.1 Workspace setup
+  - [x] pnpm workspace with the folders from `CLAUDE.md` (`kernel/`, `services/`, `providers/`,
         `harnesses/`, `bots/`, `apps/api`, `apps/web`, `apps/desktop`)
-  - [ ] TypeScript (strict) shared config
-  - [ ] Test runner (Vitest) with one example test
-  - [ ] Formatter / linter
-- [ ] 1.2 Pin versions: Node version file, pnpm version
-- [ ] 1.3 `.gitignore` for `.env`, build output, local data
-- [ ] 1.4 `.env.example` listing `OPENCODE_API_KEY` and `LLM_BASE_URL` (no real values)
-- [ ] 1.5 README "How to run" section: `pnpm install`, `pnpm test`
+  - [x] TypeScript (strict) shared config
+  - [x] Test runner (Vitest) with one example test
+  - [x] Formatter / linter
+- [x] 1.2 Pin versions: Node version file, pnpm version
+- [x] 1.3 `.gitignore` for `.env`, build output, local data
+- [x] 1.4 `.env.example` listing `OPENCODE_API_KEY` and `LLM_BASE_URL` (no real values)
+- [x] 1.5 README "How to run" section: `pnpm install`, `pnpm test`
 
 **Check:** `pnpm install` and `pnpm test` work on your Mac and the example test passes.
 

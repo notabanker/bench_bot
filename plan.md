@@ -69,18 +69,20 @@ Goal: every message and every step a bot takes is saved, so chats survive a rest
 
 **Check:** tests pass, including "close and reopen the database, chat is still there".
 
-## Phase 4 — Our own simple loop talking to an AI
+## Phase 4 — Our own simple loop talking to an AI ✅
 
 Goal: a bot can get a real answer from OpenCode Go ("Way 1": our app calls OpenCode Go directly).
 
-- [ ] 4.1 LLM provider: OpenAI-style `/chat/completions` with streaming
-  - [ ] Base URL from `LLM_BASE_URL` (default `https://opencode.ai/zen/go/v1`), key from
+- [x] 4.1 LLM provider: OpenAI-style `/chat/completions` with streaming
+  - [x] Base URL from `LLM_BASE_URL` (default `https://opencode.ai/zen/go/v1`), key from
         `OPENCODE_API_KEY`
-  - [ ] Errors become a clean "error" event, never a crash
-- [ ] 4.2 Fake provider for tests (answers from a script, no network)
-- [ ] 4.3 generic-loop harness: send → stream answer → run tool calls → repeat until done; abort works
-- [ ] 4.4 First tools: `fs.read`, `fs.write`, `fs.list`, limited to the bot's own folder
-- [ ] 4.5 Tiny command-line test script: send one message, print the answer
+  - [x] Errors become a clean "error" event, never a crash
+- [x] 4.2 Fake provider for tests (answers from a script, no network)
+- [x] 4.3 generic-loop harness: send → stream answer → run tool calls → repeat until done; abort works
+- [x] 4.4 First tools: `fs_read`, `fs_write`, `fs_list` (underscores: OpenAI-style APIs reject dots),
+      limited to the bot's own folder
+- [x] 4.5 Tiny command-line test script: `pnpm ask "…"` (default model `glm-5.3-flash`, max 12 tool
+      rounds per message — **(default — adjust)**)
 
 **Check:** on your Mac, with your key in `.env`, the test script prints a real answer.
 

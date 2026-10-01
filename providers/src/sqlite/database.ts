@@ -30,7 +30,9 @@ export const MIGRATIONS: readonly Migration[] = [
         kind      TEXT    NOT NULL CHECK (kind IN ('message', 'event')),
         run_id    TEXT,
         payload   TEXT    NOT NULL,
-        PRIMARY KEY (thread_id, seq)
+        PRIMARY KEY (thread_id, seq),
+        -- Bot events always belong to a run; user/bot messages never do.
+        CHECK ((kind = 'event') = (run_id IS NOT NULL))
       ) WITHOUT ROWID;
 
       CREATE TRIGGER entries_no_update BEFORE UPDATE ON entries

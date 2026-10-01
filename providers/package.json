@@ -2,5 +2,8 @@
   "name": "@bench_bot/providers",
   "private": true,
   "type": "module",
-  "exports": "./src/index.ts"
+  "exports": "./src/index.ts",
+  "dependencies": {
+    "@bench_bot/services": "workspace:*"
+  }
 }

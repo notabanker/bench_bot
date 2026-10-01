@@ -31,7 +31,11 @@ importers:
 
   kernel: {}
 
-  providers: {}
+  providers:
+    dependencies:
+      '@bench_bot/services':
+        specifier: workspace:*
+        version: link:../services
 
   services:
     dependencies:

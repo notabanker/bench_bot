@@ -1,3 +1,11 @@
+export {
+  AcpHarnessFactory,
+  type AcpHarnessOptions,
+  checkToolCall,
+  findProgram,
+  type McpStdioServer,
+  type WrappedCommand,
+} from "./acp/acp-harness.ts";
 export { HarnessRegistry, UnknownHarnessError } from "./catalog.ts";
 export {
   DEFAULT_MAX_STEPS,

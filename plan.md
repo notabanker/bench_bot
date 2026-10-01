@@ -36,7 +36,7 @@ Goal: an empty but correctly set-up project that builds and runs its tests.
 
 **Check:** `pnpm install` and `pnpm test` work on your Mac and the example test passes.
 
-## Phase 2 — Kernel (the wiring) ✅ (2026-10-01, waiting for your check)
+## Phase 2 — Kernel (the wiring) ✅ (2026-10-01, OK given)
 
 Goal: the small core that lets every part of the app find the others without knowing how they
 are built ("register a service, get a service").
@@ -52,15 +52,16 @@ are built ("register a service, get a service").
 
 **Check:** tests pass; I show you the interface files with a short plain-words explanation of each.
 
-## Phase 3 — Saving chats
+## Phase 3 — Saving chats ✅ (2026-10-01, waiting for your check)
 
 Goal: every message and every step a bot takes is saved, so chats survive a restart.
 
-- [ ] 3.1 Database setup with Node's built-in `node:sqlite`
-  - [ ] Tables: bots, threads, runs, messages, events (see `docs/ARCHITECTURE.md` §6)
-  - [ ] Simple, numbered schema migrations
-- [ ] 3.2 Session service: append an event, read a thread, in one transaction per append
-- [ ] 3.3 Tests: write, read back, restart, read again
+- [x] 3.1 Database setup with Node's built-in `node:sqlite`
+  - [x] Tables: `threads` + `entries` (messages and events in one ordered log). `runs`, queue and
+        `bots` tables come with Phases 4, 5 and 8, as their own migrations (`docs/ARCHITECTURE.md` §6)
+  - [x] Simple, numbered schema migrations
+- [x] 3.2 Session service: append an event, read a thread, in one transaction per append
+- [x] 3.3 Tests: write, read back, restart, read again
 
 **Check:** tests pass, including "close and reopen the database, chat is still there".
 

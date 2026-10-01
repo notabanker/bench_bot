@@ -135,15 +135,18 @@ directly, in one transaction per append. (Deliberate difference, see §7.)
 
 ## 6. Storage (SQLite, direct relational)
 
-| Table | Holds |
-|---|---|
-| `bots` | id, name, section, model, harness, access, workspace |
-| `threads` | id (public), bot_id, title, created_at |
-| `runs` | id, thread_id, harness_session_id (the CLI's own id), status, resume_cursor |
-| `messages` | id, thread_id, role, content, run_id, created_at |
-| `events` | id, thread_id, run_id, kind, payload_json — append-only, the replay source |
-| `deliveries` | mailbox fan-out: message_id, recipient_bot_id, status, queue_order |
-| `usage` | run_id, input_tokens, output_tokens, harness_id |
+| Table | Holds | Added in |
+|---|---|---|
+| `schema_migrations` | version, description, applied_at — which numbered steps ran | Phase 3 |
+| `threads` | id (public), bot_id, title, created_at | Phase 3 |
+| `entries` | thread_id, seq (1, 2, 3… per thread, no gaps), at, kind (`message` \| `event`), run_id (set exactly for events), payload JSON. **Append-only**: triggers refuse UPDATE/DELETE. User messages and bot events share this one ordered log. | Phase 3 |
+| `runs` | id, thread_id, harness_session_id (the CLI's own id), status, resume_cursor | Phase 4 |
+| `deliveries` | queue: message, recipient bot, status, order | Phase 5 |
+| `usage` | run_id, input_tokens, output_tokens, harness_id | Phase 4/5 |
+| `bots` | only if the yaml files need a cache; yaml stays the source of truth | Phase 8 |
+
+Each table arrives with the phase that first uses it, as a new numbered migration
+(`providers/src/sqlite/database.ts`). A shipped migration is never edited.
 
 Public↔external id split (OpenBot's best idea, kept): `threads.id` is stable and
 user-facing; `runs.harness_session_id` is whatever the CLI calls its own session.

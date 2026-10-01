@@ -51,6 +51,12 @@ pnpm dev:desktop  # or: the Mac app window (Electron)
 
 ![bench_bot chat window](docs/screenshots/chat-window.png)
 
+## Engines
+
+Bots run on our own loop, on [OpenCode](https://opencode.ai) or on
+[Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent). Installing and choosing them:
+[`docs/engines.md`](docs/engines.md). Bot files: [`bots/README.md`](bots/README.md).
+
 ## Why
 
 - Learn the product shape of OpenBot / OpenMausBot by building it ourselves.

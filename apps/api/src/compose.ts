@@ -21,6 +21,7 @@ import {
 } from "@bench_bot/services";
 import { StaticBotDirectory } from "./bots-static.ts";
 import { type AppConfig, isOffline } from "./config.ts";
+import { BotDelegation, delegationTools } from "./delegation.ts";
 import { Hub, LiveSession } from "./hub.ts";
 import { BotRunner } from "./runner.ts";
 
@@ -55,7 +56,7 @@ export function fallbackBots(config: AppConfig): BotDirectory {
       instructions: "You are a helpful assistant. Keep answers short and concrete.",
       model: config.defaultModel,
       harness: "generic-loop",
-      tools: ["fs_read", "fs_write", "fs_list"],
+      tools: ["fs_read", "fs_write", "fs_list", "list_bots", "ask_bot"],
       workspacePath: join(config.dataDir, "workspaces", "assistant"),
     },
   ]);
@@ -95,6 +96,8 @@ export async function compose(
   const bots: BotDirectory =
     overrides.bots ?? ((await yamlBots.list()).length > 0 ? yamlBots : fallbackBots(config));
   const runner = new BotRunner({ bots, harnesses, session, runs, hub });
+  const delegation = new BotDelegation({ bots, session, queue: runner });
+  for (const t of delegationTools(delegation)) tools.register(t);
 
   const kernel = new Kernel();
   kernel.register(Services.session, session);
@@ -104,6 +107,7 @@ export async function compose(
   kernel.register(Services.harnesses, harnesses);
   kernel.register(Services.bots, bots);
   kernel.register(Services.queue, runner);
+  kernel.register(Services.delegation, delegation);
 
   // Runs that were in progress when the app stopped can never finish: close them in the log too.
   for (const run of runs.markInterrupted()) {

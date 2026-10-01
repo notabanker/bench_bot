@@ -10,6 +10,8 @@ export interface AskBotRequest {
   text: string;
   /** Bots already in this ask-chain, the asking bot last. Its length is the chain depth. */
   chain: string[];
+  /** Aborting it stops the asked bot's run too. */
+  signal?: AbortSignal;
 }
 
 export type AskBotResult = { ok: true; answer: string } | { ok: false; reason: string };

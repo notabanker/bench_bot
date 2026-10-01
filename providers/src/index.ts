@@ -11,6 +11,16 @@ export {
 } from "./llm/openai-compatible.ts";
 export { callTools, EchoLlm, reply, ScriptedLlm, type ScriptedTurn } from "./llm/scripted.ts";
 export {
+  COMMAND_RULES,
+  checkCommand,
+  PROTECTED_HOME_PATHS,
+  SafetyPolicy,
+  type SafetyPolicyOptions,
+  SYSTEM_PATHS,
+  WRITABLE_SYSTEM_PATHS,
+} from "./policy/safety-policy.ts";
+export { type SandboxedCommand, sandboxed, seatbeltProfile } from "./policy/seatbelt.ts";
+export {
   MIGRATIONS,
   type Migration,
   openDatabase,

@@ -1,3 +1,4 @@
+import { homedir } from "node:os";
 import { join } from "node:path";
 import type { DatabaseSync } from "node:sqlite";
 import { GenericLoopFactory, HarnessRegistry } from "@bench_bot/harnesses";
@@ -9,6 +10,7 @@ import {
   OpenAiCompatibleLlm,
   openDatabase,
   RunStore,
+  SafetyPolicy,
   SqliteSession,
   ToolRegistry,
   YamlBotDirectory,
@@ -27,6 +29,7 @@ import { BotRunner } from "./runner.ts";
 
 export interface AppServices {
   config: AppConfig;
+  policy: SafetyPolicy;
   /** Problems in bot files (when bots come from YAML). */
   botProblems(): { file: string; message: string }[];
   kernel: Kernel;
@@ -81,8 +84,13 @@ export async function compose(
           ...(config.apiKey ? { apiKey: config.apiKey } : {}),
         }));
   const fs = new LocalFs();
+  // Bots may not write bench_bot's own data (other workspaces, the database) or program.
+  const policy = new SafetyPolicy({
+    home: homedir(),
+    protectedPaths: [config.dataDir, config.repoRoot],
+  });
   const tools = new ToolRegistry();
-  for (const t of fsTools(fs)) tools.register(t);
+  for (const t of fsTools(fs, policy)) tools.register(t);
   const harnesses = new HarnessRegistry([
     new GenericLoopFactory({ llm, tools }),
     ...(overrides.harnesses ?? []),
@@ -103,6 +111,7 @@ export async function compose(
   kernel.register(Services.session, session);
   kernel.register(Services.llm, llm);
   kernel.register(Services.fs, fs);
+  kernel.register(Services.policy, policy);
   kernel.register(Services.tools, tools);
   kernel.register(Services.harnesses, harnesses);
   kernel.register(Services.bots, bots);
@@ -128,6 +137,7 @@ export async function compose(
 
   return {
     config,
+    policy,
     botProblems: () => (bots === yamlBots ? yamlBots.problems() : []),
     kernel,
     runner,

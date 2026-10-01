@@ -181,9 +181,27 @@ the Mac or bench_bot itself:
 
 When something is blocked: refuse, tell the bot why, and put a short note in the chat. No pop-up.
 
-Honest limits: the block list only sees commands that pass through us; the sandbox is what makes
-the folder limits hold. Apple labels `sandbox-exec` deprecated, but it is present on current macOS
-and OpenBot relies on it. Mac first; Linux/Windows confinement is not planned for v1.
+Implementation: `providers/src/policy/safety-policy.ts` (rules, block list) and
+`providers/src/policy/seatbelt.ts` (macOS sandbox profile + `sandbox-exec` wrapper). One list of
+protected places feeds both. Writing is refused in: macOS system folders (`/System`, `/Library`,
+`/usr` except `/usr/local`, `/etc`, `/var` except temp, `/Applications`, `/dev`…), the disk root
+and home folder itself, `~/Library/Keychains`, `~/Library/LaunchAgents|LaunchDaemons`, and
+bench_bot's own data folder and program folder — except the bot's own workspace. Reading is
+always allowed. Commands are refused for: sudo/su, disk formatting/erasing, raw disk writes,
+shutdown/reboot, macOS security settings (csrutil, nvram, spctl…), stopping system services,
+power settings, deleting Time Machine backups, deleting system folders or the whole home folder,
+permission changes on system folders, fork bombs, killing core macOS processes.
+
+Honest limits:
+- The block list is pattern matching. It only sees commands that reach us (an engine's permission
+  request); a determined or confused model can phrase the same thing differently. The sandbox is
+  what makes the folder limits hold for everything a confined program does.
+- Our own loop has no shell tool, so for `generic-loop` bots the folder limits are enforced by
+  the file tools themselves (workspace containment + policy check).
+- The sandbox exists only on macOS. On Linux/Windows outside programs run unconfined (a warning is
+  logged). Apple labels `sandbox-exec` deprecated, but it ships with current macOS and OpenBot
+  relies on it too.
+- Reading is not limited: a bot can read any file your user can read.
 
 ## 8. Stack
 

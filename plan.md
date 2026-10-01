@@ -19,7 +19,7 @@ Legend: `[ ]` open · `[x]` done · **Check:** what you can look at or try yours
 
 ---
 
-## Phase 1 — Project skeleton ✅ (2026-09-30, waiting for your check)
+## Phase 1 — Project skeleton ✅ (done 2026-09-30, checked on Mac 2026-10-01)
 
 Goal: an empty but correctly set-up project that builds and runs its tests.
 

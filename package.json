@@ -10,12 +10,15 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p apps/web",
     "lint": "biome check .",
     "format": "biome check --write .",
     "ask": "pnpm --filter @bench_bot/api ask",
     "dev:api": "pnpm --filter @bench_bot/api dev",
-    "start": "pnpm --filter @bench_bot/api start"
+    "start": "pnpm --filter @bench_bot/api start",
+    "dev:web": "pnpm --filter @bench_bot/web dev",
+    "dev": "pnpm --parallel --filter @bench_bot/api --filter @bench_bot/web dev",
+    "build": "pnpm --filter @bench_bot/web build"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

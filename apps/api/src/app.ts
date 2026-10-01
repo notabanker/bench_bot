@@ -153,7 +153,11 @@ export function createApp(services: AppServices, options: AppOptions = {}): Hono
   app.get("/api/threads/:threadId/events", async (c) => {
     const thread = await session.getThread(c.req.param("threadId"));
     if (!thread) return c.json({ error: "Unknown thread" }, 404);
-    const afterSeq = Number(c.req.query("afterSeq") ?? 0) || 0;
+    // EventSource reconnects send the last seen id; honour it like afterSeq.
+    const afterSeq = Math.max(
+      Number(c.req.query("afterSeq") ?? 0) || 0,
+      Number(c.req.header("last-event-id") ?? 0) || 0,
+    );
 
     return streamSSE(c, async (stream) => {
       let lastSeq = afterSeq;

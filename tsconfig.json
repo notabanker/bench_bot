@@ -14,6 +14,14 @@
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["kernel", "services", "providers", "harnesses", "apps/*/src", "*.ts"],
+  "include": [
+    "kernel",
+    "services",
+    "providers",
+    "harnesses",
+    "apps/api/src",
+    "apps/desktop/src",
+    "*.ts"
+  ],
   "exclude": ["node_modules", "**/dist"]
 }

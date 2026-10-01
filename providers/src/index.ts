@@ -1,3 +1,10 @@
+export { LocalFs, MAX_READ_BYTES, OutsideWorkspaceError } from "./fs/local-fs.ts";
+export {
+  OPENCODE_GO_BASE_URL,
+  OpenAiCompatibleLlm,
+  type OpenAiCompatibleOptions,
+} from "./llm/openai-compatible.ts";
+export { callTools, EchoLlm, reply, ScriptedLlm, type ScriptedTurn } from "./llm/scripted.ts";
 export {
   MIGRATIONS,
   type Migration,
@@ -10,3 +17,5 @@ export {
   type SqliteSessionOptions,
   ThreadNotFoundError,
 } from "./sqlite/sqlite-session.ts";
+export { fsTools, stringArg } from "./tools/fs-tools.ts";
+export { ToolRegistry } from "./tools/registry.ts";

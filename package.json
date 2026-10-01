@@ -13,7 +13,9 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "format": "biome check --write .",
-    "ask": "pnpm --filter @bench_bot/api ask"
+    "ask": "pnpm --filter @bench_bot/api ask",
+    "dev:api": "pnpm --filter @bench_bot/api dev",
+    "start": "pnpm --filter @bench_bot/api start"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

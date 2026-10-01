@@ -30,8 +30,15 @@ pnpm lint         # check formatting and common mistakes
 pnpm format       # fix formatting
 ```
 
-For real AI answers later: copy `.env.example` to `.env` and put your OpenCode Go key in it.
-`.env` is never committed.
+For real AI answers: copy `.env.example` to `.env` and put your OpenCode Go key in it.
+`.env` is never committed. Then ask our own loop one question:
+
+```bash
+pnpm ask "What is the capital of France?"
+pnpm ask --model deepseek-v4-flash "Hello"   # pick another OpenCode Go model
+```
+
+Without a key, `pnpm ask` answers in offline echo mode.
 
 ## Why
 

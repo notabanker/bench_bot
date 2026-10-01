@@ -2,5 +2,14 @@
   "name": "@bench_bot/api",
   "private": true,
   "type": "module",
-  "exports": "./src/index.ts"
+  "exports": "./src/index.ts",
+  "dependencies": {
+    "@bench_bot/kernel": "workspace:*",
+    "@bench_bot/services": "workspace:*",
+    "@bench_bot/providers": "workspace:*",
+    "@bench_bot/harnesses": "workspace:*"
+  },
+  "scripts": {
+    "ask": "tsx --disable-warning=ExperimentalWarning src/ask.ts"
+  }
 }

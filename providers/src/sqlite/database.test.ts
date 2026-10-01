@@ -76,4 +76,18 @@ describe("openDatabase", () => {
     expect(() => db.exec("DELETE FROM entries")).toThrow(/append-only/);
     db.close();
   });
+
+  it("requires a run id on bot events and forbids one on messages", () => {
+    const db = openDatabase(":memory:");
+    db.exec("INSERT INTO threads VALUES ('t1', 'b1', 'x', '2026-01-01T00:00:00Z')");
+    expect(() =>
+      db.exec("INSERT INTO entries VALUES ('t1', 1, '2026-01-01T00:00:00Z', 'event', NULL, '{}')"),
+    ).toThrow(/CHECK/);
+    expect(() =>
+      db.exec(
+        "INSERT INTO entries VALUES ('t1', 1, '2026-01-01T00:00:00Z', 'message', 'r1', '{}')",
+      ),
+    ).toThrow(/CHECK/);
+    db.close();
+  });
 });

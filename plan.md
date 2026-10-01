@@ -36,17 +36,18 @@ Goal: an empty but correctly set-up project that builds and runs its tests.
 
 **Check:** `pnpm install` and `pnpm test` work on your Mac and the example test passes.
 
-## Phase 2 — Kernel (the wiring)
+## Phase 2 — Kernel (the wiring) ✅ (2026-10-01, waiting for your check)
 
 Goal: the small core that lets every part of the app find the others without knowing how they
 are built ("register a service, get a service").
 
-- [ ] 2.1 Kernel: `register(name, service)` and `get(name)`
-  - [ ] Clear error when a service is missing or registered twice
-  - [ ] Tests for both
-- [ ] 2.2 Service interfaces only (no implementations yet) in `services/`:
-      `llm`, `session`, `tool`, `harness`, `delegation`, `fs`, `policy`
-- [ ] 2.3 Shared event type: the one list of things a bot run can report
+- [x] 2.1 Kernel: `register(name, service)` and `get(name)`
+  - [x] Clear error when a service is missing or registered twice
+  - [x] Tests for both
+- [x] 2.2 Service interfaces only (no implementations yet) in `services/`:
+      `llm`, `session`, `tool`, `harness`, `delegation`, `fs`, `policy`, plus `queue` (already in
+      `docs/ARCHITECTURE.md`) and `bots` (the roster), needed in Phases 5 and 8
+- [x] 2.3 Shared event type: the one list of things a bot run can report
       (text piece, tool call, tool result, usage, finished, error, blocked)
 
 **Check:** tests pass; I show you the interface files with a short plain-words explanation of each.

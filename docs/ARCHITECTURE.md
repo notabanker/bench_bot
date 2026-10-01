@@ -32,10 +32,11 @@ apps/desktop/ Electron shell: starts apps/api, opens apps/web in a window
 | `llm` | `stream(messages, tools, signal) -> AsyncIterable<Chunk>` | OpenAI-compatible `/chat/completions` (one impl; default base URL OpenCode Go, also Ollama / LM Studio) |
 | `session` | `append(threadId, event)` / `read(threadId)` / `resume(threadId)` | SQLite (`node:sqlite`) |
 | `tool` | `schema()` / `run(call, ctx)` | host tools: `fs.*`, `ask_bot`, `list_bots` |
-| `harness` | `start` / `send` / `abort` / `capabilities` | `generic-loop`, `opencode*`, `prime-agent*` (\*stub first) |
+| `harnesses` | catalog of `HarnessFactory` (§3): `get(id)` / `ids()` | `generic-loop`, `opencode*`, `prime-agent*` (\*stub first) |
 | `delegation` | `list_bots()` / `ask_bot(botId, text)` | mailbox over SQLite |
 | `fs` | `read` / `write` / `list` scoped to a bot workspace | local |
-| `queue` | `enqueue(msg)` / `drain(botId)` / `pause` | per-bot FIFO, one live turn per bot |
+| `queue` | `enqueue(delivery)` / `pending` / `pause` / `resume` | per-bot FIFO, one live turn per bot |
+| `bots` | `list()` / `get(id)` | bot yaml files (Phase 8) |
 | `policy` | `check(action, ctx) -> allow \| block(reason)` | folder limits + block list (§7a) |
 
 Rule: **interfaces before implementations**, and never a god object. `AgentService` does not exist here.
@@ -46,26 +47,37 @@ v0 implements the **bold** parts; the rest is declared in the interface and retu
 `unsupported` until built. Evidence for each requirement is in `reference-notes.md`.
 
 ```ts
-interface Harness {
+// One engine (generic-loop, opencode, prime-agent). Registered in the HarnessCatalog.
+interface HarnessFactory {
   id: string
   capabilities(): { resume: boolean; steer: boolean; tools: boolean; reasoning: boolean }
-  start(ctx: BotRunContext): Promise<RunHandle>
-  send(text: string, opts?: { tools?: ToolSchema[]; signal?: AbortSignal }): AsyncIterable<Chunk>
-  abort(runId: string): Promise<void>          // idempotent, settles with reason 'aborted'
-  resume?(runId: string): Promise<'cursor' | 'replay'>
+  create(): Harness                            // a fresh harness for every bot run
+}
+
+// One bot run (the CLAUDE.md contract + optional resume).
+interface Harness {
+  id: string
+  start(ctx: BotRunContext): Promise<void>     // resolve model + tools before logging anything
+  send(text: string): AsyncIterable<BotEvent>  // never throws; ends with exactly one `finish`
+  abort(): Promise<void>                       // idempotent; stream ends with reason 'aborted'
+  resume?(): Promise<'cursor' | 'replay'>
 }
 ```
 
+Source of truth: `services/src/harness.ts` and `services/src/events.ts`. One harness instance
+per run keeps runs apart without run ids on every call.
+
 - **Start before you commit:** model + tools + adapter are resolved *before* any
   model-visible input is written to the session log (dsh `prepareCall`, PA `ProviderTarget`).
-- **One canonical chunk union:** `text-delta | reasoning-delta | tool-call | tool-result |
-  usage | finish(reason)`. A provider throw becomes a terminal `error` chunk — never a raw throw.
+- **One canonical event union (`BotEvent`):** `text-delta | reasoning-delta | tool-call |
+  tool-result | blocked | usage | error | finish(done|aborted|error|max-steps)`. A provider throw
+  becomes an `error` event + `finish` — never a raw throw.
 - **Abort is signal-driven** and safe to call twice; an aborted run records zero usage.
 - **Capabilities gate the UI**: never offer a control the bound harness cannot honour.
 - **Resume** is either a cursor into a live native session or a replay of the durable log —
   and the two must be distinguishable by the caller.
 
-`BotRunContext = { botId, threadId, workspacePath, model, toolPolicy, sessionLog }`
+`BotRunContext = { botId, threadId, runId, workspacePath, model, instructions, toolPolicy, sessionLog }`
 
 ## 4. Bot definition (config, never hardcoded)
 

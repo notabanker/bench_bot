@@ -127,16 +127,18 @@ Goal: bench_bot opens as a normal Mac app window.
 **Check:** `pnpm dev:desktop` on your iMac opens the bench_bot window. Tested in the cloud on a
 virtual screen (Linux, Electron 44.5.1); not yet on macOS.
 
-## Phase 8 — Bots as config files
+## Phase 8 — Bots as config files ✅
 
 Goal: each bot is a small text file you can edit: name, instructions, model, harness, tools.
 
-- [ ] 8.1 Bot file format (YAML) and validation with clear error messages
-- [ ] 8.2 Starter bots (needs open question Q1): Orchestrator, Finance, a simple default bot
-- [ ] 8.3 Each bot gets its own work folder
-- [ ] 8.4 Changing a bot's `harness:` or `model:` line switches it — nothing hard-coded
+- [x] 8.1 Bot file format (YAML) and validation with clear error messages
+- [x] 8.2 Starter bots **(default — adjust, answers Q1 provisionally)**: Assistant (generic-loop,
+      `glm-5.3-flash`), Orchestrator (opencode, `kimi-k3`), Finance (prime-agent, `deepseek-v4-pro`),
+      Grok (opencode, `grok-4.7`). Format: `bots/README.md`
+- [x] 8.3 Each bot gets its own work folder
+- [x] 8.4 Changing a bot's `harness:` or `model:` line switches it — nothing hard-coded
 
-**Check:** you edit a bot file (e.g. change its model), restart, and the bot uses the new setting.
+**Check:** edit a bot file (e.g. change its model); the next message uses the new setting, no restart.
 
 ## Phase 9 — Bots asking bots
 
@@ -203,8 +205,8 @@ Goal: a side panel where a bot's "computer" will later show. A placeholder image
 
 ## Open questions
 
-- **Q1** (before Phase 8) Starter bots: names, what each one does, which model each uses.
-  What exactly should the Finance bot do?
+- **Q1** (still open for you) Starter bots: I created four as a default (see Phase 8). Rename,
+  change or delete them in `bots/*.yaml`; what the Finance bot should really do is yours to decide.
 - ~~Q2~~ answered: save state directly + event log (simple).
 - ~~Q3~~ answered: license left unset for now.
 - ~~Q4~~ answered: "EU-built" pitch removed from the README.

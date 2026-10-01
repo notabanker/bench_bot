@@ -86,18 +86,21 @@ Goal: a bot can get a real answer from OpenCode Go ("Way 1": our app calls OpenC
 
 **Check:** on your Mac, with your key in `.env`, the test script prints a real answer.
 
-## Phase 5 — Local server (API)
+## Phase 5 — Local server (API) ✅
 
 Goal: the part the window talks to — list bots, open threads, send a message, stream the answer
 live.
 
-- [ ] 5.1 Hono server on `127.0.0.1` only (not reachable from other computers)
-- [ ] 5.2 Endpoints: list bots, list threads, read a thread, send a message
-- [ ] 5.3 Live stream (SSE) of a bot's answer as it is typed
-- [ ] 5.4 One live run per bot; further messages wait in line (queue)
-- [ ] 5.5 Tests for each endpoint using the fake AI
+- [x] 5.1 Hono server on `127.0.0.1` only (not reachable from other computers)
+- [x] 5.2 Endpoints: list bots, list threads, read a thread, send a message
+- [x] 5.3 Live stream (SSE) of a bot's answer as it is typed
+- [x] 5.4 One live run per bot; further messages wait in line (queue). The line is kept in memory:
+      after a restart, queued (not yet started) messages stay in the chat but are not re-run
+      **(default — adjust)**; runs cut off by a crash are marked "interrupted"
+- [x] 5.5 Tests for each endpoint using the fake AI
 
-**Check:** I give you one command to start the server and one `curl` line to send a message.
+**Check:** `pnpm start`, then `curl http://127.0.0.1:8787/api/bots`. Port 8787 and the data folder
+`~/Library/Application Support/bench_bot` are **(default — adjust)** via `BENCH_PORT` / `BENCH_DATA_DIR`.
 
 ## Phase 6 — Chat window (web UI)
 

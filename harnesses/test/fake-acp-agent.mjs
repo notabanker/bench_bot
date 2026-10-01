@@ -133,6 +133,9 @@ createInterface({ input: process.stdin }).on("line", async (line) => {
     case "session/cancel":
       cancelled?.();
       return;
+    case "session/close":
+      process.stderr.write("closed session\n");
+      return send({ jsonrpc: "2.0", id: msg.id, result: {} });
     default:
       if (msg.id !== undefined)
         send({ jsonrpc: "2.0", id: msg.id, error: { code: -32601, message: "nope" } });

@@ -56,6 +56,7 @@ export interface AcpHarnessOptions {
 
 const INIT_TIMEOUT_MS = 60_000;
 const CANCEL_GRACE_MS = 5_000;
+const CLOSE_TIMEOUT_MS = 3_000;
 const MAX_TOOL_OUTPUT = 4_000;
 
 /** Where programs installed by Homebrew, npm or curl scripts usually end up on a Mac. */
@@ -198,7 +199,7 @@ class AcpHarness implements Harness {
     try {
       yield* this.#events.drain();
     } finally {
-      this.#cleanup();
+      await this.#cleanup();
     }
   }
 
@@ -292,8 +293,7 @@ class AcpHarness implements Harness {
   ): Promise<void> {
     const menu = options.find((o) => o.id === "model" || o.category === "model");
     if (!menu || !model) return;
-    const values = flattenOptions(menu.options);
-    const match = values.find((v) => v === model) ?? values.find((v) => v.endsWith(`/${model}`));
+    const match = matchModel(flattenOptions(menu.options), model);
     if (!match) {
       this.#events.push({
         type: "error",
@@ -349,7 +349,8 @@ class AcpHarness implements Harness {
       }
       case "tool_call": {
         const callId = String(update.toolCallId);
-        const tool = String(update.name ?? update.kind ?? "tool");
+        // Engines name tools differently: a name, a human title, or only a kind ("other").
+        const tool = String(update.name || update.title || update.kind || "tool");
         this.#tools.set(callId, tool);
         this.#events.push({
           type: "tool-call",
@@ -412,10 +413,21 @@ class AcpHarness implements Harness {
     return `${this.#o.displayName}: ${message}${detail && !message.includes(detail) ? ` (${detail})` : ""}`;
   }
 
-  #cleanup(): void {
+  /**
+   * Ends the run's engine session. Some engines (Prime Agent) keep background workers per
+   * session, so ask them to close it before stopping the program.
+   */
+  async #cleanup(): Promise<void> {
     this.#dispose();
     this.#dispose = () => {};
-    this.#rpc?.kill();
+    const rpc = this.#rpc;
+    if (!rpc) return;
+    if (!rpc.closed && this.#sessionId) {
+      await rpc
+        .request("session/close", { sessionId: this.#sessionId }, CLOSE_TIMEOUT_MS)
+        .catch(() => {});
+    }
+    rpc.kill();
   }
 }
 
@@ -448,6 +460,31 @@ function flattenOptions(options: unknown): string[] {
   if (!Array.isArray(options)) return [];
   return options.flatMap((o: { value?: string; options?: unknown }) =>
     typeof o.value === "string" ? [o.value] : flattenOptions(o.options),
+  );
+}
+
+/**
+ * The engine's menu value for a bot's model id. Engines write ids differently: OpenCode
+ * "opencode-go/kimi-k3", Prime Agent '["opencode-go","kimi-k3"]'. Matches the full id first, then
+ * the same id after any provider prefix.
+ */
+export function matchModel(values: string[], model: string): string | undefined {
+  const plain = (value: string) => {
+    if (value.startsWith("[")) {
+      try {
+        const parts = JSON.parse(value) as unknown;
+        if (Array.isArray(parts) && parts.every((p) => typeof p === "string"))
+          return parts.join("/");
+      } catch {}
+    }
+    return value;
+  };
+  const entries = values.map((value) => ({ value, id: plain(value) }));
+  const wanted = plain(model);
+  return (
+    entries.find((e) => e.id === wanted)?.value ??
+    entries.find((e) => e.id.endsWith(`/${wanted}`))?.value ??
+    entries.find((e) => wanted.endsWith(`/${e.id}`))?.value
   );
 }
 

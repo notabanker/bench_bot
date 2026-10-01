@@ -47,12 +47,22 @@ install it. Nothing crashes.
 - **Teammates:** if the bot's `tools` include `list_bots` / `ask_bot`, the program gets a small
   bench_bot tool server (`apps/api/bin/mcp-bridge.mjs`, MCP over stdio) so it can ask other bots.
   It is authenticated with a one-time token that expires when the run ends.
-- **Stop** sends the program a cancel request and ends it after 5 seconds if needed.
+- **Stop** sends the program a cancel request and ends it after 5 seconds if needed. When a run
+  ends, bench_bot asks the engine to close the session first, then stops the program.
+- **Prime Agent keeps a background service** (its own design: sessions survive a closed terminal).
+  After bench_bot runs, `prime-agent status` shows it; `prime-agent shutdown` stops it. bench_bot
+  does not stop it for you, because you may be using Prime Agent yourself at the same time.
+- **Model ids:** OpenCode writes `opencode-go/kimi-k3`, Prime Agent `["opencode-go","kimi-k3"]`;
+  bench_bot understands both, so bot files always use `opencode-go/<model>`. Without
+  `OPENCODE_API_KEY`, Prime Agent does not offer the OpenCode Go models at all.
 
 ## Tested
 
 - `generic-loop`: unit tests with a scripted model; real endpoint reached (401 with a wrong key).
 - `opencode`: tested end to end against the real OpenCode 1.18.34 on Linux (cloud) with its free
   model; not yet on macOS, not yet with an OpenCode Go key.
-- `prime-agent`: tested only through the shared ACP code with a fake agent; the real program was
-  not run yet.
+- `prime-agent`: real Prime Agent 0.9.8 (Linux, cloud) installed with the official script: start,
+  ACP handshake, model menu and Stop verified through bench_bot. No answer was tested, because the
+  cloud has no OpenCode Go key. Not yet on macOS.
+- Orchestrator (real OpenCode) → `list_bots` + `ask_bot` → Finance → answer back: verified end to
+  end in the cloud (Finance gave its stand-in reply there).

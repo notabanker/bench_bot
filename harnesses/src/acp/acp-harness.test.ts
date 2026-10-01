@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { openDatabase, SafetyPolicy, SqliteSession } from "@bench_bot/providers";
 import type { BotEvent, BotRunContext } from "@bench_bot/services";
 import { afterEach, describe, expect, it } from "vitest";
-import { AcpHarnessFactory, type AcpHarnessOptions } from "./acp-harness.ts";
+import { AcpHarnessFactory, type AcpHarnessOptions, matchModel } from "./acp-harness.ts";
 
 const FAKE_AGENT = join(import.meta.dirname, "..", "..", "test", "fake-acp-agent.mjs");
 const dirs: string[] = [];
@@ -94,7 +94,7 @@ describe("ACP harness", () => {
     expect(events).toContainEqual({
       type: "tool-call",
       callId: "t1",
-      tool: "execute",
+      tool: "bash",
       args: { command: "ls -la" },
     });
     expect(events).toContainEqual({
@@ -178,5 +178,30 @@ describe("ACP harness", () => {
     });
     await run("hello");
     expect(disposed).toBe(true);
+  });
+});
+
+describe("matchModel", () => {
+  const opencode = ["opencode/big-pickle", "opencode-go/kimi-k3", "opencode-go/deepseek-v4-pro"];
+  const prime = [
+    '["amazon-bedrock","nova"]',
+    '["opencode-go","deepseek-v4-pro"]',
+    '["opencode","big-pickle"]',
+  ];
+
+  it("matches OpenCode-style ids exactly or without the provider", () => {
+    expect(matchModel(opencode, "opencode-go/kimi-k3")).toBe("opencode-go/kimi-k3");
+    expect(matchModel(opencode, "kimi-k3")).toBe("opencode-go/kimi-k3");
+  });
+
+  it("matches Prime Agent's JSON-list ids and returns the engine's own value", () => {
+    expect(matchModel(prime, "opencode-go/deepseek-v4-pro")).toBe(
+      '["opencode-go","deepseek-v4-pro"]',
+    );
+    expect(matchModel(prime, "deepseek-v4-pro")).toBe('["opencode-go","deepseek-v4-pro"]');
+  });
+
+  it("returns undefined when nothing fits", () => {
+    expect(matchModel(prime, "gpt-unknown")).toBeUndefined();
   });
 });

@@ -4,6 +4,7 @@ export {
   checkToolCall,
   findProgram,
   type McpStdioServer,
+  matchModel,
   type WrappedCommand,
 } from "./acp/acp-harness.ts";
 export { HarnessRegistry, UnknownHarnessError } from "./catalog.ts";

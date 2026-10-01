@@ -27,7 +27,18 @@ importers:
 
   apps/web: {}
 
-  harnesses: {}
+  harnesses:
+    dependencies:
+      '@bench_bot/services':
+        specifier: workspace:*
+        version: link:../services
+    devDependencies:
+      '@bench_bot/kernel':
+        specifier: workspace:*
+        version: link:../kernel
+      '@bench_bot/providers':
+        specifier: workspace:*
+        version: link:../providers
 
   kernel: {}
 

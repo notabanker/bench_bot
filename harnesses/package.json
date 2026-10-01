@@ -2,5 +2,12 @@
   "name": "@bench_bot/harnesses",
   "private": true,
   "type": "module",
-  "exports": "./src/index.ts"
+  "exports": "./src/index.ts",
+  "dependencies": {
+    "@bench_bot/services": "workspace:*"
+  },
+  "devDependencies": {
+    "@bench_bot/providers": "workspace:*",
+    "@bench_bot/kernel": "workspace:*"
+  }
 }

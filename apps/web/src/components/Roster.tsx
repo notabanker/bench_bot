@@ -28,6 +28,7 @@ export function Roster(props: {
   onSelect: (id: string) => void;
   offline: boolean;
   problems: { file: string; message: string }[];
+  onPhone?: () => void;
 }) {
   const sections = new Map<string, BotView[]>();
   for (const bot of props.bots) {
@@ -42,6 +43,17 @@ export function Roster(props: {
           <span className="pill pill-warn" title="No OPENCODE_API_KEY: our own loop echoes">
             offline
           </span>
+        )}
+        <span className="spacer" />
+        {props.onPhone && (
+          <button
+            type="button"
+            className="btn btn-small"
+            onClick={props.onPhone}
+            title="Open bench_bot on your phone"
+          >
+            Phone
+          </button>
         )}
       </header>
       <nav>

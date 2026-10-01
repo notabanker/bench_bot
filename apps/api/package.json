@@ -9,11 +9,15 @@
     "@bench_bot/providers": "workspace:*",
     "@bench_bot/services": "workspace:*",
     "@hono/node-server": "2.1.3",
-    "hono": "4.13.12"
+    "hono": "4.13.12",
+    "qrcode": "1.5.4"
   },
   "scripts": {
     "ask": "tsx --disable-warning=ExperimentalWarning src/ask.ts",
     "dev": "tsx watch --disable-warning=ExperimentalWarning src/main.ts",
     "start": "tsx --disable-warning=ExperimentalWarning src/main.ts"
+  },
+  "devDependencies": {
+    "@types/qrcode": "1.5.6"
   }
 }

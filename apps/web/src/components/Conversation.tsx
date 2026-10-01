@@ -12,6 +12,13 @@ export function Conversation(props: {
   onStop: () => void;
   computerOpen: boolean;
   onToggleComputer: () => void;
+  /** Phone layout: back button, chat picker and "new chat" live in the header. */
+  narrow?: {
+    threads: Thread[];
+    onBack: () => void;
+    onSelectThread: (id: string) => void;
+    onNew: () => void;
+  };
 }) {
   const items = buildTimeline(props.entries);
   const lastTurn = [...items].reverse().find((i) => i.kind === "turn");
@@ -29,7 +36,40 @@ export function Conversation(props: {
 
   return (
     <main className="conversation">
-      <header className="pane-head">
+      {props.narrow && (
+        <header className="pane-head mobile-head">
+          <button
+            type="button"
+            className="btn btn-small"
+            onClick={props.narrow.onBack}
+            aria-label="Back to bots"
+          >
+            ‹ Bots
+          </button>
+          <select
+            className="thread-select"
+            value={props.thread?.id ?? ""}
+            onChange={(e) => props.narrow?.onSelectThread(e.target.value)}
+            aria-label="Chat"
+          >
+            {!props.thread && <option value="">New chat</option>}
+            {props.narrow.threads.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.title}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="btn btn-small"
+            onClick={props.narrow.onNew}
+            aria-label="New chat"
+          >
+            +
+          </button>
+        </header>
+      )}
+      <header className={`pane-head${props.narrow ? " desktop-only" : ""}`}>
         <span className="pane-title">{props.thread?.title ?? "New chat"}</span>
         <span className="pane-sub">
           {props.bot.name} · {props.bot.harness} · {props.bot.model}
@@ -51,7 +91,12 @@ export function Conversation(props: {
         {working && <div className="working">{props.bot.name} is working…</div>}
         {items.length === 0 && <p className="empty">Say hello to {props.bot.name}.</p>}
       </div>
-      <Composer working={working} onSend={props.onSend} onStop={props.onStop} />
+      <Composer
+        working={working}
+        onSend={props.onSend}
+        onStop={props.onStop}
+        touch={!!props.narrow}
+      />
     </main>
   );
 }
@@ -160,6 +205,8 @@ function Composer(props: {
   working: boolean;
   onSend: (text: string) => Promise<void>;
   onStop: () => void;
+  /** Phone: Enter makes a new line; the Send button sends. */
+  touch: boolean;
 }) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -184,11 +231,13 @@ function Composer(props: {
     >
       <textarea
         value={text}
-        placeholder="Message (Enter to send, Shift+Enter for a new line)"
+        placeholder={
+          props.touch ? "Message" : "Message (Enter to send, Shift+Enter for a new line)"
+        }
         rows={2}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+          if (!props.touch && e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
             e.preventDefault();
             void submit();
           }

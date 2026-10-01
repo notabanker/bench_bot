@@ -47,6 +47,7 @@ async function setup(
     defaultModel: "m",
     host: "127.0.0.1",
     port: 0,
+    phone: { enabled: false, password: "unused-pass", generated: false },
   };
   const services = await compose(config, { llm, bots: new StaticBotDirectory(bots), harnesses });
   cleanups.push(

@@ -508,3 +508,96 @@ code {
     display: none;
   }
 }
+
+/* Dialog (phone pairing) */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.35);
+  display: grid;
+  place-items: center;
+  z-index: 10;
+}
+.dialog {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  width: min(380px, 92vw);
+  overflow: hidden;
+}
+.dialog-body {
+  padding: 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dialog-body p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.qr {
+  width: 220px;
+  height: 220px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 6px;
+  padding: 6px;
+}
+
+/* Phone layout: one screen at a time, bigger touch targets, 16px text (no zoom on focus). */
+.mobile-head {
+  display: none;
+}
+.app.narrow {
+  grid-template-columns: 1fr;
+  height: 100dvh;
+  font-size: 15px;
+}
+.app.narrow .roster {
+  border-right: none;
+}
+.app.narrow .bot-row {
+  padding: 10px 12px;
+}
+.app.narrow .mobile-head {
+  display: flex;
+  height: 48px;
+  gap: 8px;
+}
+.app.narrow .btn-small {
+  padding: 6px 10px;
+  font-size: 14px;
+}
+.thread-select {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px;
+}
+.app.narrow .timeline {
+  padding: 10px;
+}
+.app.narrow .msg {
+  max-width: 100%;
+}
+.app.narrow .composer {
+  padding: 8px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+}
+.app.narrow .composer textarea {
+  font-size: 16px;
+}
+
+/* Phone layout: only one screen at a time (kept last so it wins). */
+.app.narrow .threads,
+.app.narrow .computer,
+.app.narrow.view-bots .conversation,
+.app.narrow.view-chat .roster,
+.app.narrow .desktop-only {
+  display: none;
+}

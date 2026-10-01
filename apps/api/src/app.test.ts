@@ -11,6 +11,9 @@ import type { AppConfig } from "./config.ts";
 // biome-ignore lint/suspicious/noExplicitAny: test helper for loosely typed JSON responses
 type Json = any;
 
+/** Requests in these tests come from this computer. */
+const LOCAL = { remoteAddress: () => "127.0.0.1" };
+
 const cleanups: Array<() => Promise<void> | void> = [];
 afterEach(async () => {
   for (const c of cleanups.splice(0).reverse()) await c();
@@ -27,13 +30,14 @@ async function setup(llm = new ScriptedLlm([reply("Hello from the bot")])) {
     defaultModel: "m",
     host: "127.0.0.1",
     port: 0,
+    phone: { enabled: false, password: "unused-pass", generated: false },
   };
   const services = await compose(config, { llm });
   cleanups.push(
     () => rmSync(dataDir, { recursive: true, force: true }),
     () => services.close(),
   );
-  const app = createApp(services);
+  const app = createApp(services, LOCAL);
   const call = (path: string, init: RequestInit = {}) =>
     app.request(`http://localhost${path}`, {
       ...init,
@@ -187,7 +191,7 @@ describe("API", () => {
 
   it("refuses requests for other host names", async () => {
     const { services } = await setup();
-    const res = await createApp(services).request("http://evil.example/api/health");
+    const res = await createApp(services, LOCAL).request("http://evil.example/api/health");
     expect(res.status).toBe(403);
   });
 
@@ -215,6 +219,7 @@ describe("API", () => {
       defaultModel: "m",
       host: "127.0.0.1",
       port: 0,
+      phone: { enabled: false, password: "unused-pass", generated: false },
     };
     const first = await compose(config, { llm: new ScriptedLlm([]) });
     const session = (await import("@bench_bot/services")).Services.session;
@@ -261,10 +266,11 @@ describe("API with bot files", () => {
       defaultModel: "m",
       host: "127.0.0.1",
       port: 0,
+      phone: { enabled: false, password: "unused-pass", generated: false },
     };
     const services = await compose(config, { llm: new ScriptedLlm([]) });
     cleanups.push(() => services.close());
-    const app = createApp(services);
+    const app = createApp(services, LOCAL);
 
     const bots = (await (await app.request("http://localhost/api/bots")).json()) as Json;
     expect(bots.map((b: { id: string }) => b.id)).toEqual(["helper"]);

@@ -40,12 +40,17 @@ async function startServer() {
     defaultModel: "m",
     host: "127.0.0.1",
     port: 0,
+    phone: { enabled: false, password: "unused-pass", generated: false },
   };
   const services = await compose(config, {
     llm: new ScriptedLlm([]),
     bots: new StaticBotDirectory([bot("orch"), bot("fin")]),
   });
-  const server = serve({ fetch: createApp(services).fetch, hostname: "127.0.0.1", port: 0 });
+  const server = serve({
+    fetch: createApp(services).fetch,
+    hostname: "127.0.0.1",
+    port: 0,
+  });
   await new Promise<void>((r) => server.once("listening", () => r()));
   const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   cleanups.push(

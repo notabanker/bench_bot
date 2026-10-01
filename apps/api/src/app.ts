@@ -2,11 +2,26 @@ import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { relative } from "node:path";
 import { type BotDefinition, Services, type StoredEntry } from "@bench_bot/services";
+import { getConnInfo } from "@hono/node-server/conninfo";
 import { serveStatic } from "@hono/node-server/serve-static";
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
+import { getCookie, setCookie } from "hono/cookie";
 import { streamSSE } from "hono/streaming";
+import QRCode from "qrcode";
 import type { AppServices } from "./compose.ts";
 import type { RunStatusChange } from "./hub.ts";
+import {
+  isLoopback,
+  isPrivateNetwork,
+  LOGIN_PAGE,
+  LoginLimiter,
+  lanAddresses,
+  type PhoneConfig,
+  PhoneSessions,
+  sameSecret,
+} from "./phone.ts";
+
+export const PHONE_COOKIE = "bench_phone";
 
 const MAX_MESSAGE_CHARS = 100_000;
 const HEARTBEAT_MS = 15_000;
@@ -14,9 +29,15 @@ const HEARTBEAT_MS = 15_000;
 export interface AppOptions {
   /** Built web UI to serve at `/` (apps/web/dist). */
   webDist?: string;
+  /** Overrides the config's phone mode (tests). */
+  phone?: PhoneConfig;
+  /** The caller's IP address; defaults to the socket's (tests pass their own). */
+  remoteAddress?: (c: Context) => string | undefined;
+  /** This computer's home-network addresses; defaults to the network interfaces (tests). */
+  lanAddresses?: () => string[];
 }
 
-/** The local HTTP API. Only reachable from this computer (see the Host check). */
+/** The local HTTP API. Reachable from this computer, and in phone mode from logged-in home devices. */
 export function createApp(services: AppServices, options: AppOptions = {}): Hono {
   const { kernel, runner, runs, hub } = services;
   const session = kernel.get(Services.session);
@@ -25,15 +46,99 @@ export function createApp(services: AppServices, options: AppOptions = {}): Hono
   const tools = kernel.get(Services.tools);
   const app = new Hono();
 
-  // Refuse requests that name another host: stops web pages elsewhere from reaching this API
-  // through DNS tricks. The server only listens on 127.0.0.1 anyway.
+  const phone = options.phone ?? services.config.phone;
+  const ownAddresses = () => options.lanAddresses?.() ?? lanAddresses();
+  const remoteOf = (c: Context): string | undefined => {
+    if (options.remoteAddress) return options.remoteAddress(c);
+    try {
+      return getConnInfo(c).remote.address;
+    } catch {
+      return undefined; // Unknown caller: treated as another device and refused.
+    }
+  };
+  const sessions = new PhoneSessions();
+  const limiter = new LoginLimiter();
+  const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+  const login = (c: Context) => {
+    const token = sessions.create();
+    setCookie(c, PHONE_COOKIE, token, {
+      httpOnly: true,
+      sameSite: "Strict",
+      path: "/",
+      maxAge: 30 * 24 * 3600,
+    });
+  };
+
+  // Who may talk to this server:
+  // - this computer, under a local host name (DNS-rebinding protection);
+  // - in phone mode, devices on the home network that logged in with the phone password.
   app.use("*", async (c, next) => {
     // The Node server builds the request URL from the Host header.
     const host = new URL(c.req.url).hostname;
-    if (host !== "localhost" && host !== "127.0.0.1" && host !== "[::1]") {
-      return c.json({ error: "Forbidden host" }, 403);
+    const remote = remoteOf(c);
+    if (isLoopback(remote)) {
+      if (!LOCAL_HOSTS.has(host)) return c.json({ error: "Forbidden host" }, 403);
+      return next();
     }
-    await next();
+    if (!phone.enabled || !isPrivateNetwork(remote)) {
+      return c.json({ error: "bench_bot only accepts connections from this computer" }, 403);
+    }
+    if (!ownAddresses().includes(host)) return c.json({ error: "Forbidden host" }, 403);
+    if (c.req.path.startsWith("/api/internal/") || c.req.path === "/api/phone") {
+      return c.json({ error: "Only available on this computer" }, 403);
+    }
+
+    const address = remote ?? "?";
+    if (c.req.path === "/phone-login") {
+      if (c.req.method !== "POST") return c.html(LOGIN_PAGE());
+      if (limiter.blocked(address))
+        return c.html(LOGIN_PAGE("Too many tries. Wait 10 minutes."), 429);
+      const form = await c.req.parseBody().catch(() => ({}) as Record<string, unknown>);
+      const password = typeof form.password === "string" ? form.password.trim() : "";
+      if (!sameSecret(password, phone.password)) {
+        limiter.fail(address);
+        return c.html(LOGIN_PAGE("Wrong password."), 401);
+      }
+      limiter.succeed(address);
+      login(c);
+      return c.redirect("/");
+    }
+    // The QR code on the Mac carries the password as ?key=… so scanning logs in directly.
+    const key = c.req.query("key");
+    if (key !== undefined && c.req.method === "GET" && !c.req.path.startsWith("/api/")) {
+      if (limiter.blocked(address))
+        return c.html(LOGIN_PAGE("Too many tries. Wait 10 minutes."), 429);
+      if (!sameSecret(key, phone.password)) {
+        limiter.fail(address);
+        return c.html(LOGIN_PAGE("That link has an old password. Enter the current one."), 401);
+      }
+      limiter.succeed(address);
+      login(c);
+      return c.redirect("/");
+    }
+    if (sessions.valid(getCookie(c, PHONE_COOKIE))) return next();
+    if (c.req.path.startsWith("/api/")) return c.json({ error: "Log in first" }, 401);
+    return c.redirect("/phone-login");
+  });
+
+  /** For the Mac only: what the phone needs (address, password, QR code). */
+  app.get("/api/phone", async (c) => {
+    if (!phone.enabled) return c.json({ enabled: false });
+    const port = new URL(c.req.url).port || "80";
+    const urls = ownAddresses().map((a) => `http://${a}:${port}/`);
+    const first = urls[0];
+    return c.json({
+      enabled: true,
+      password: phone.password,
+      urls,
+      qrSvg: first
+        ? await QRCode.toString(`${first}?key=${encodeURIComponent(phone.password)}`, {
+            type: "svg",
+            margin: 1,
+          })
+        : null,
+    });
   });
 
   app.onError((error, c) => {

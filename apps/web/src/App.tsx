@@ -2,9 +2,17 @@ import { useEffect, useState } from "react";
 import { api } from "./api.ts";
 import { ComputerPane } from "./components/ComputerPane.tsx";
 import { Conversation } from "./components/Conversation.tsx";
+import { PhonePanel } from "./components/PhonePanel.tsx";
 import { Roster } from "./components/Roster.tsx";
 import { ThreadList } from "./components/ThreadList.tsx";
-import { useBots, useHealth, useThreadEntries, useThreads } from "./hooks.ts";
+import {
+  useBots,
+  useHealth,
+  useNarrow,
+  usePhoneInfo,
+  useThreadEntries,
+  useThreads,
+} from "./hooks.ts";
 
 const STORAGE_KEY = "bench_bot.ui";
 
@@ -31,7 +39,17 @@ export function App() {
   const { threads, refresh: refreshThreads } = useThreads(botId);
   const entries = useThreadEntries(threadId);
   const thread = threads.find((t) => t.id === threadId) ?? null;
-  const computerOpen = !!botId && ui.computerFor.includes(botId);
+  const narrow = useNarrow();
+  const phoneInfo = usePhoneInfo();
+  const [phoneOpen, setPhoneOpen] = useState(false);
+  const [mobileView, setMobileView] = useState<"bots" | "chat">("bots");
+  const computerOpen = !narrow && !!botId && ui.computerFor.includes(botId);
+  const newChat = async () => {
+    if (!botId) return;
+    const created = await api.createThread(botId);
+    await refreshThreads();
+    setThreadId(created.id);
+  };
 
   useEffect(() => {
     try {
@@ -59,15 +77,19 @@ export function App() {
   };
 
   return (
-    <div className={`app${computerOpen ? " with-computer" : ""}`}>
+    <div
+      className={`app${computerOpen ? " with-computer" : ""}${narrow ? ` narrow view-${mobileView}` : ""}`}
+    >
       <Roster
         bots={bots}
         selectedId={botId}
         offline={!!health?.offline}
         problems={problems}
+        {...(phoneInfo ? { onPhone: () => setPhoneOpen(true) } : {})}
         onSelect={(id) => {
           setUi((u) => ({ ...u, botId: id }));
           setThreadId(null);
+          setMobileView("chat");
         }}
       />
       <ThreadList
@@ -75,12 +97,7 @@ export function App() {
         threads={threads}
         selectedId={threadId}
         onSelect={setThreadId}
-        onNew={async () => {
-          if (!botId) return;
-          const created = await api.createThread(botId);
-          await refreshThreads();
-          setThreadId(created.id);
-        }}
+        onNew={newChat}
       />
       <Conversation
         bot={bot}
@@ -89,6 +106,16 @@ export function App() {
         onSend={send}
         onStop={() => threadId && void api.abort(threadId)}
         computerOpen={computerOpen}
+        {...(narrow
+          ? {
+              narrow: {
+                threads,
+                onBack: () => setMobileView("bots"),
+                onSelectThread: setThreadId,
+                onNew: () => void newChat(),
+              },
+            }
+          : {})}
         onToggleComputer={() =>
           botId &&
           setUi((u) => ({
@@ -106,6 +133,9 @@ export function App() {
             setUi((u) => ({ ...u, computerFor: u.computerFor.filter((b) => b !== bot.id) }))
           }
         />
+      )}
+      {phoneOpen && phoneInfo && (
+        <PhonePanel info={phoneInfo} onClose={() => setPhoneOpen(false)} />
       )}
       {error && <div className="toast">Server not reachable: {error}</div>}
     </div>

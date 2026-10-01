@@ -201,6 +201,20 @@ Goal: a side panel where a bot's "computer" will later show. A placeholder image
 
 ---
 
+## Phase 13 — Phone mode ✅ (added 2026-10-01 on request)
+
+Goal: use bench_bot from an Android phone on the same Wi-Fi.
+
+- [x] 13.1 Off by default; `BENCH_PHONE=1` in `.env` switches it on (fixed port 8787)
+- [x] 13.2 Password for every phone request (chosen or random per start), session cookie,
+      10 wrong tries → 10 minutes wait
+- [x] 13.3 Home networks only; bridge and password stay Mac-only
+- [x] 13.4 QR code on the Mac (Phone button) and in the terminal; scanning logs in directly
+- [x] 13.5 Phone layout: bot list → chat with back button, chat picker, "+"; Enter = new line
+- [x] 13.6 Guide: `docs/phone.md` (incl. "not encrypted on Wi-Fi")
+
+**Check:** at home, `BENCH_PHONE=1`, start the app, click **Phone**, scan with Android.
+
 ## Later (not in the first version)
 
 - Test everything on macOS and with a real OpenCode Go key (built and tested in a Linux cloud)

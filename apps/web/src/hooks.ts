@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, type BotView, type Health, type StoredEntry, type Thread } from "./api.ts";
+import {
+  api,
+  type BotView,
+  type Health,
+  type PhoneInfo,
+  type StoredEntry,
+  type Thread,
+} from "./api.ts";
 
 /** The roster, refreshed whenever a run starts or ends anywhere. */
 export function useBots() {
@@ -75,4 +82,28 @@ export function useThreadEntries(threadId: string | null) {
   }, [threadId]);
 
   return entries;
+}
+
+/** Phone-sized screen. */
+export function useNarrow(query = "(max-width: 700px)") {
+  const [narrow, setNarrow] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    const onChange = () => setNarrow(media.matches);
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, [query]);
+  return narrow;
+}
+
+/** Phone-mode details; null when off or when this window is itself the phone. */
+export function usePhoneInfo() {
+  const [info, setInfo] = useState<Extract<PhoneInfo, { enabled: true }> | null>(null);
+  useEffect(() => {
+    api.phone().then(
+      (p) => setInfo(p.enabled ? p : null),
+      () => setInfo(null),
+    );
+  }, []);
+  return info;
 }

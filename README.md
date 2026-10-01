@@ -59,6 +59,11 @@ pnpm dev:desktop  # or: the Mac app window (Electron)
 
 ![bench_bot chat window](docs/screenshots/chat-window.png)
 
+## On your phone
+
+Same Wi-Fi as the Mac: set `BENCH_PHONE=1` in `.env`, click **Phone** in the app and scan the QR
+code. Details and security notes: [`docs/phone.md`](docs/phone.md).
+
 ## Engines
 
 Bots run on our own loop, on [OpenCode](https://opencode.ai) or on

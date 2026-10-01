@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { OPENCODE_GO_BASE_URL } from "@bench_bot/providers";
+import { type PhoneConfig, phoneConfigFromEnv } from "./phone.ts";
 
 /** Model our own loop uses when a bot names none. OpenCode Go, on /chat/completions. (default — adjust) */
 export const DEFAULT_MODEL = "glm-5.3-flash";
@@ -17,6 +18,8 @@ export interface AppConfig {
   defaultModel: string;
   host: string;
   port: number;
+  /** Phone mode (BENCH_PHONE=1): other devices on the home network may connect with a password. */
+  phone: PhoneConfig;
 }
 
 /** Walks up from this file to the folder holding pnpm-workspace.yaml. */
@@ -56,6 +59,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     defaultModel: env.BENCH_DEFAULT_MODEL || DEFAULT_MODEL,
     host: "127.0.0.1",
     port: Number(env.BENCH_PORT || 8787),
+    phone: phoneConfigFromEnv(env),
   };
 }
 

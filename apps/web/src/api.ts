@@ -21,6 +21,10 @@ export interface RunView {
   usage: { input: number; output: number; cachedInput?: number } | null;
 }
 
+export type PhoneInfo =
+  | { enabled: false }
+  | { enabled: true; password: string; urls: string[]; qrSvg: string | null };
+
 export interface Health {
   ok: boolean;
   offline: boolean;
@@ -41,6 +45,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   health: () => request<Health>("/api/health"),
+  /** Only answers on the Mac itself; a phone gets an error. */
+  phone: () => request<PhoneInfo>("/api/phone"),
   bots: () => request<BotView[]>("/api/bots"),
   botProblems: () => request<{ file: string; message: string }[]>("/api/bot-problems"),
   threads: (botId: string) => request<Thread[]>(`/api/bots/${encodeURIComponent(botId)}/threads`),

@@ -212,6 +212,14 @@ Honest limits:
   relies on it too.
 - Reading is not limited: a bot can read any file your user can read.
 
+## 7b. Phone mode
+
+Off by default. With `BENCH_PHONE=1` the server also listens on the home network; a gate in
+`apps/api/src/app.ts` lets this computer through as before and lets other devices through only
+from private network ranges, to the Mac's own address, after a password login (session cookie).
+The engine bridge (`/api/internal/*`) and `/api/phone` stay loopback-only. Plain http on the LAN.
+See `docs/phone.md`.
+
 ## 8. Stack
 
 TypeScript · pnpm workspaces · **Hono** (HTTP + SSE) · **`node:sqlite`** (built into Node) ·

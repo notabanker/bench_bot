@@ -41,6 +41,29 @@ export const MIGRATIONS: readonly Migration[] = [
         BEGIN SELECT RAISE(ABORT, 'entries are append-only'); END;
     `,
   },
+  {
+    version: 2,
+    description: "runs: one row per bot run with status and token usage",
+    sql: `
+      CREATE TABLE runs (
+        id                  TEXT PRIMARY KEY,
+        thread_id           TEXT NOT NULL REFERENCES threads (id),
+        bot_id              TEXT NOT NULL,
+        harness             TEXT NOT NULL,
+        model               TEXT NOT NULL,
+        status              TEXT NOT NULL CHECK (status IN
+                              ('running', 'done', 'aborted', 'error', 'max-steps', 'interrupted')),
+        started_at          TEXT NOT NULL,
+        finished_at         TEXT,
+        input_tokens        INTEGER,
+        output_tokens       INTEGER,
+        cached_input_tokens INTEGER,
+        -- The engine's own session id (OpenCode/Prime Agent), for resuming. Phase 11.
+        harness_session_id  TEXT
+      );
+      CREATE INDEX runs_by_thread ON runs (thread_id, started_at);
+    `,
+  },
 ];
 
 export class SchemaTooNewError extends Error {

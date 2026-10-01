@@ -1,3 +1,4 @@
+export { HarnessRegistry, UnknownHarnessError } from "./catalog.ts";
 export {
   DEFAULT_MAX_STEPS,
   GENERIC_LOOP_ID,

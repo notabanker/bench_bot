@@ -64,7 +64,7 @@ describe("openDatabase", () => {
   });
 
   it("rejects migrations with gaps", () => {
-    const gap: Migration = { version: 3, description: "gap", sql: "SELECT 1" };
+    const gap: Migration = { version: MIGRATIONS.length + 2, description: "gap", sql: "SELECT 1" };
     expect(() => openDatabase(":memory:", [...MIGRATIONS, gap])).toThrow(/missing or out of order/);
   });
 

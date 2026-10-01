@@ -4,3 +4,7 @@ packages:
   - providers
   - harnesses
   - apps/*
+
+# Packages allowed to run install scripts. (Electron 44 has none: it downloads itself on first start.)
+onlyBuiltDependencies:
+  - esbuild

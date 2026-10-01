@@ -115,17 +115,17 @@ Goal: something you can click and type into.
 **Check:** `pnpm build && pnpm start`, open http://127.0.0.1:8787 — or `pnpm dev` and open
 http://127.0.0.1:5173 for live-reloading UI work.
 
-## Phase 7 — Desktop app (Electron, Mac)
+## Phase 7 — Desktop app (Electron, Mac) ✅
 
 Goal: bench_bot opens as a normal Mac app window.
 
-- [ ] 7.1 Electron shell: starts the local server, opens the chat window
-- [ ] 7.2 Closing the app stops the server and any bot programs cleanly
-- [ ] 7.3 `pnpm dev:desktop` for development
+- [x] 7.1 Electron shell: starts the local server, opens the chat window
+- [x] 7.2 Closing the app stops the server and any bot programs cleanly
+- [x] 7.3 `pnpm dev:desktop` for development
 - [ ] 7.4 (Later, not in this phase) signed `.dmg` installer
 
-**Check:** you run `pnpm dev:desktop` on your iMac and the bench_bot window opens.
-(I cannot open windows in the cloud, so this check happens on your Mac.)
+**Check:** `pnpm dev:desktop` on your iMac opens the bench_bot window. Tested in the cloud on a
+virtual screen (Linux, Electron 44.5.1); not yet on macOS.
 
 ## Phase 8 — Bots as config files
 

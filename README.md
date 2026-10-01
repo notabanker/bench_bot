@@ -46,6 +46,7 @@ Without a key, `pnpm ask` answers in offline echo mode.
 pnpm build        # build the chat window once
 pnpm start        # start the server, then open http://127.0.0.1:8787
 pnpm dev          # or: server + live-reloading window on http://127.0.0.1:5173
+pnpm dev:desktop  # or: the Mac app window (Electron)
 ```
 
 ![bench_bot chat window](docs/screenshots/chat-window.png)

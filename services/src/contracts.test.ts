@@ -70,6 +70,8 @@ const ctx = (log: ThreadLog) => ({
   instructions: "Be brief.",
   toolPolicy: { allowedTools: [] },
   sessionLog: log,
+  untilSeq: 1,
+  chain: ["b1"],
 });
 
 describe("service contracts", () => {

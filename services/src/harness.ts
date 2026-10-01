@@ -27,6 +27,13 @@ export interface BotRunContext {
   instructions: string;
   toolPolicy: ToolPolicy;
   sessionLog: ThreadLog;
+  /**
+   * Seq of the message this run answers. Log entries with a lower seq are the history; later
+   * entries (e.g. messages queued meanwhile) are not part of this run.
+   */
+  untilSeq: number;
+  /** Bots already in this ask-chain, this bot last. `[botId]` for a run started by the user. */
+  chain: string[];
 }
 
 /**

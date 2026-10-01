@@ -8,8 +8,8 @@ export interface AskBotRequest {
   fromBotId: string;
   toBotId: string;
   text: string;
-  /** How many asks deep this chain already is; 0 when a user message started it. */
-  depth: number;
+  /** Bots already in this ask-chain, the asking bot last. Its length is the chain depth. */
+  chain: string[];
 }
 
 export type AskBotResult = { ok: true; answer: string } | { ok: false; reason: string };

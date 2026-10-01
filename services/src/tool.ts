@@ -10,6 +10,8 @@ export interface ToolContext {
   threadId: string;
   runId: string;
   workspacePath: string;
+  /** Bots already in this ask-chain, the calling bot last. Used to stop ask_bot loops. */
+  chain: string[];
   signal?: AbortSignal;
 }
 
@@ -17,6 +19,8 @@ export interface ToolContext {
 export interface ToolResult {
   ok: boolean;
   output: string;
+  /** Set when the safety policy refused the action; becomes a `blocked` event. */
+  blocked?: { action: string; reason: string };
 }
 
 export interface ToolDefinition {

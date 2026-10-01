@@ -140,16 +140,19 @@ Goal: each bot is a small text file you can edit: name, instructions, model, har
 
 **Check:** edit a bot file (e.g. change its model); the next message uses the new setting, no restart.
 
-## Phase 9 — Bots asking bots
+## Phase 9 — Bots asking bots ✅
 
 Goal: the Orchestrator can hand a question to the Finance bot and use the answer.
 
-- [ ] 9.1 Tools `list_bots` and `ask_bot`
-- [ ] 9.2 The asked bot's answer goes back to the asking bot automatically
-- [ ] 9.3 Loop protection: a bot cannot ask itself, and chains stop after a set depth
-- [ ] 9.4 The chat shows "Orchestrator asked Finance…" so you can follow it
+- [x] 9.1 Tools `list_bots` and `ask_bot`
+- [x] 9.2 The asked bot's answer goes back to the asking bot automatically
+- [x] 9.3 Loop protection: no asking itself, no asking a bot already in the chain, max 3 bots per
+      chain, 10-minute wait limit **(default — adjust)**; Stop also stops the asked bot
+- [x] 9.4 The chat shows an `ask_bot → finance` chip with the answer; Finance's list shows the
+      conversation as "Asked by orchestrator"
 
-**Check:** you ask the Orchestrator something about money; you see it ask Finance and answer.
+**Check:** works today between bots on our own loop (e.g. Assistant → Finance once Finance runs on
+`generic-loop`). For the Orchestrator on OpenCode, see Phase 11.
 
 ## Phase 10 — Safety rules
 

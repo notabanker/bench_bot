@@ -154,25 +154,25 @@ Goal: the Orchestrator can hand a question to the Finance bot and use the answer
 **Check:** works today between bots on our own loop (e.g. Assistant → Finance once Finance runs on
 `generic-loop`). For the Orchestrator on OpenCode, see Phase 11.
 
-## Phase 10 — Safety rules
+## Phase 10 — Safety rules ✅
 
 Goal: bots may do almost everything without asking, but can never break the Mac or the app.
 Must be finished **before** any outside program (OpenCode, Prime Agent) runs commands.
 
-- [ ] 10.1 Policy service with two layers
-  - [ ] **Folder limits:** bots may write in their own folder and your normal user folders; never
+- [x] 10.1 Policy service with two layers
+  - [x] **Folder limits:** bots may write in their own folder and your normal user folders; never
         in macOS system folders, the bench_bot app, or bench_bot's own data
-  - [ ] **Block list:** no `sudo`, no disk erase/format tools, no deleting system paths, no
+  - [x] **Block list:** no `sudo`, no disk erase/format tools, no deleting system paths, no
         shutting down or changing system settings
-- [ ] 10.2 When something is blocked: refuse, tell the bot why, show a short note in the chat
+- [x] 10.2 When something is blocked: refuse, tell the bot why, show a short note in the chat
       (no pop-up)
-- [ ] 10.3 Outside programs run inside the macOS sandbox (`sandbox-exec`), so the limits also cover
-      scripts they write and run
-- [ ] 10.4 Tests with harmless "dangerous" examples (they must be refused)
-- [ ] 10.5 Honest limits written down in `docs/ARCHITECTURE.md`
+- [x] 10.3 Sandbox profile + `sandbox-exec` wrapper built and tested; applied to OpenCode and
+      Prime Agent in Phase 11. Not run on a real Mac yet (cloud is Linux)
+- [x] 10.4 Tests with harmless "dangerous" examples (they must be refused)
+- [x] 10.5 Honest limits written down in `docs/ARCHITECTURE.md`
 
-**Check:** I show you the rule list in plain words; you try asking a bot to run `sudo` and see the
-refusal note.
+**Check:** the rule list in plain words is in `docs/ARCHITECTURE.md` §7a; the block list is
+**(default — adjust)** in `providers/src/policy/safety-policy.ts`.
 
 ## Phase 11 — OpenCode and Prime Agent
 

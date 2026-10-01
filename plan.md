@@ -19,6 +19,10 @@ Legend: `[ ]` open · `[x]` done · **Check:** what you can look at or try yours
 
 ---
 
+> **2026-10-01, user decision:** build all remaining phases (4–12) in one go, without stopping
+> for an OK after each phase. The user adjusts the codebase afterwards. Defaults chosen without
+> asking are marked **(default — adjust)** below and collected in the final report.
+
 ## Phase 1 — Project skeleton ✅ (done 2026-09-30, checked on Mac 2026-10-01)
 
 Goal: an empty but correctly set-up project that builds and runs its tests.
@@ -52,7 +56,7 @@ are built ("register a service, get a service").
 
 **Check:** tests pass; I show you the interface files with a short plain-words explanation of each.
 
-## Phase 3 — Saving chats ✅ (2026-10-01, waiting for your check)
+## Phase 3 — Saving chats ✅ (2026-10-01)
 
 Goal: every message and every step a bot takes is saved, so chats survive a restart.
 

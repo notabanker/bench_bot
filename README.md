@@ -10,12 +10,20 @@ agent loop — open-source harnesses only). Models come from an OpenCode Go subs
 
 ## Status
 
-Phase 0 done. No application code yet. The build follows [`plan.md`](plan.md), one phase at a time.
+First version built: all 12 phases of [`plan.md`](plan.md) are done (174 automated tests).
 
-- [x] `CLAUDE.md` — the build instruction (read this first)
-- [x] `docs/openbot-map.md` — architectural map of the reference project
-- [x] `docs/reference-notes.md` — OpenMausBot, deepseek-harness, prime-agent
-- [x] `docs/ARCHITECTURE.md` — our own design
+What works:
+
+- Chat window and Mac app (Electron): bot list, chats, live answers, Stop, tool chips.
+- Three engines: our own loop (OpenCode Go directly), OpenCode and Prime Agent (both over ACP).
+- Bots as editable files in `bots/` — four starter bots to adjust.
+- Bots asking bots (`list_bots`, `ask_bot`), with loop protection.
+- Safety rules: folder limits + command block list, macOS sandbox for outside programs.
+- Chats are stored locally and survive restarts.
+
+Not tested on macOS yet (built and tested in a Linux cloud machine), and not yet with a real
+OpenCode Go key. Design: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Reference notes:
+[`docs/openbot-map.md`](docs/openbot-map.md), [`docs/reference-notes.md`](docs/reference-notes.md).
 
 ## How to run
 

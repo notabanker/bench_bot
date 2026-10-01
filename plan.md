@@ -190,12 +190,12 @@ Goal: bots can run on the two open-source programs ("Way 2").
 and Finance on Prime Agent. Cloud-tested with the real programs on Linux; see `docs/engines.md`
 "Tested".
 
-## Phase 12 — Computer pane (placeholder)
+## Phase 12 — Computer pane (placeholder) ✅
 
 Goal: a side panel where a bot's "computer" will later show. A placeholder image is enough for now.
 
-- [ ] 12.1 Side panel with a placeholder screenshot
-- [ ] 12.2 Open / close per bot
+- [x] 12.1 Side panel with a placeholder screenshot
+- [x] 12.2 Open / close per bot (remembered in the window); built together with Phase 6
 
 **Check:** the panel opens next to a chat.
 
@@ -203,6 +203,10 @@ Goal: a side panel where a bot's "computer" will later show. A placeholder image
 
 ## Later (not in the first version)
 
+- Test everything on macOS and with a real OpenCode Go key (built and tested in a Linux cloud)
+- Keep the waiting line across restarts (today: in memory)
+- Engine-native resume for OpenCode/Prime Agent (today: recent history is replayed each run)
+- Fewer database rows per answer (today: one row per streamed text piece)
 - Scheduler / routines (only after chat + two harnesses work)
 - Codex CLI and Gemini CLI harnesses (same ACP connector where possible)
 - Generic loop support for OpenCode Go's `/responses` (Grok) and `/messages` endpoints

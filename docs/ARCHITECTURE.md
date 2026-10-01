@@ -27,24 +27,27 @@ apps/web/    sidebar roster + thread + composer
 apps/desktop/ Electron shell: starts apps/api, opens apps/web in a window
 ```
 
-| Service | Interface (v0) | Provider(s) v0 |
+Interfaces live in `services/src/*.ts`; implementations are named per row. All are registered in
+the kernel in `apps/api/src/compose.ts`.
+
+| Service | Interface | Implementation |
 |---|---|---|
-| `llm` | `stream(messages, tools, signal) -> AsyncIterable<Chunk>` | OpenAI-compatible `/chat/completions` (one impl; default base URL OpenCode Go, also Ollama / LM Studio) |
-| `session` | `append(threadId, event)` / `read(threadId)` / `resume(threadId)` | SQLite (`node:sqlite`) |
-| `tool` | `schema()` / `run(call, ctx)` | host tools: `fs.*`, `ask_bot`, `list_bots` |
-| `harnesses` | catalog of `HarnessFactory` (§3): `get(id)` / `ids()` | `generic-loop`, `opencode*`, `prime-agent*` (\*stub first) |
-| `delegation` | `list_bots()` / `ask_bot(botId, text)` | mailbox over SQLite |
-| `fs` | `read` / `write` / `list` scoped to a bot workspace | local |
-| `queue` | `enqueue(delivery)` / `pending` / `pause` / `resume` | per-bot FIFO, one live turn per bot |
-| `bots` | `list()` / `get(id)` | bot yaml files (Phase 8) |
-| `policy` | `check(action, ctx) -> allow \| block(reason)` | folder limits + block list (§7a) |
+| `llm` | `stream(request) -> AsyncIterable<LlmChunk>` | `OpenAiCompatibleLlm` (`/chat/completions`; OpenCode Go by default, also Ollama / LM Studio); `ScriptedLlm`/`EchoLlm` for tests and offline |
+| `session` | `createThread` / `listThreads` / `append` / `read(afterSeq)` / `log(threadId)` | `SqliteSession` (`node:sqlite`), wrapped by `LiveSession` for live updates |
+| `tools` | `register` / `schemas(names)` / `run(name, args, ctx)` | `ToolRegistry` with `fs_read`, `fs_write`, `fs_list`, `list_bots`, `ask_bot` |
+| `harnesses` | catalog of `HarnessFactory` (§3): `get(id)` / `ids()` | `generic-loop` (`GenericLoopFactory`), `opencode` + `prime-agent` (`AcpHarnessFactory`) |
+| `delegation` | `listBots(caller)` / `askBot({from, to, text, chain})` | `BotDelegation`: standing thread per bot pair, runs through the queue |
+| `fs` | `read` / `write` / `list` scoped to a bot workspace | `LocalFs` |
+| `queue` | `enqueue` / `whenDone` / `abortThread` / `pause` / `resume` | `BotRunner`: per-bot FIFO in memory, one live run per bot |
+| `bots` | `list()` / `get(id)` | `YamlBotDirectory` (`bots/*.yaml`, re-read on every call) |
+| `policy` | `check(action, ctx) -> allow \| refuse(reason)` | `SafetyPolicy`: folder limits + block list (§7a) |
 
 Rule: **interfaces before implementations**, and never a god object. `AgentService` does not exist here.
 
 ## 3. The Harness contract
 
-v0 implements the **bold** parts; the rest is declared in the interface and returns
-`unsupported` until built. Evidence for each requirement is in `reference-notes.md`.
+Evidence for each requirement is in `reference-notes.md`. All parts below are implemented;
+`resume` means "rebuild from the log" for every engine (no engine-native session resume yet).
 
 ```ts
 // One engine (generic-loop, opencode, prime-agent). Registered in the HarnessCatalog.
@@ -103,8 +106,8 @@ there is no Grok harness. Swapping a bot's harness must be a one-line edit.
 | Harness | How it runs | Status |
 |---|---|---|
 | `generic-loop` | our own loop in-process; calls `llm` over HTTP (OpenCode Go key, `OPENCODE_API_KEY`) | real |
-| `opencode` | starts `opencode acp` (MIT) and talks ACP over stdio, as both references do | stub → real |
-| `prime-agent` | starts `prime-agent --mode acp` (MIT, Rust) — same ACP transport (`crates/pa-cli/src/args.rs`, `crates/pa-daemon/src/acp/mod.rs`); its built-in `opencode-go` provider reads `OPENCODE_API_KEY` (`crates/pa-ai/src/env_api_keys.rs`) | stub → real |
+| `opencode` | starts `opencode acp` (MIT) and talks ACP over stdio, as both references do | real; stand-in reply if not installed |
+| `prime-agent` | starts `prime-agent --mode acp` (MIT, Rust) — same ACP transport (`crates/pa-cli/src/args.rs`, `crates/pa-daemon/src/acp/mod.rs`); its built-in `opencode-go` provider reads `OPENCODE_API_KEY` (`crates/pa-ai/src/env_api_keys.rs`) | real; stand-in reply if not installed |
 
 Both outside programs speak ACP, so they share **one ACP adapter** with a per-program config
 (command, args, env). Checked against prime-agent commit `839949b`, 2026-09-30.
@@ -120,15 +123,20 @@ Anthropic-style `/messages` endpoint (opencode.ai/docs/go, read 2026-09-30). The
 ## 5. Message → turn
 
 ```
-web composer ──POST /bots/:id/messages──▶ api
-   session.append(threadId, message.received)
-   queue.enqueue(botId, delivery)                → one message, N deliveries (fan-out)
-   queue.drain(botId)                            → one live turn per bot, FIFO
-      harness.start(ctx)                         → resolves model+tools first
-      harness.send(text)                         → AsyncIterable<Chunk>
-         each chunk → session.append(...) → SSE → web
-      finish → session.append(turn.finished) → drain next queued delivery
+web composer ──POST /api/threads/:id/messages──▶ api (apps/api/src/app.ts)
+   session.append(threadId, message)             → stored entry with its seq
+   runner.enqueue(delivery {seq, chain})          → per-bot FIFO, one live run per bot
+   BotRunner (apps/api/src/runner.ts)
+      runs.start(...)                            → runs table: status "running"
+      harness = harnesses.get(bot.harness).create()
+      harness.start(ctx)                         → history = log entries with seq < delivery.seq
+      for event of harness.send(text)            → BotEvent stream
+         session.append(event) → hub → SSE (/api/threads/:id/events) → web
+      exactly one finish → runs.finish(status, usage) → next delivery
 ```
+
+Engines like OpenCode reach `list_bots` / `ask_bot` through `apps/api/bin/mcp-bridge.mjs` (a
+stdio MCP server the engine starts) → `/api/internal/tools/*`, authenticated by a per-run token.
 
 No event-sourced projections: the session log and the relational tables are written
 directly, in one transaction per append. (Deliberate difference, see §7.)
@@ -137,13 +145,14 @@ directly, in one transaction per append. (Deliberate difference, see §7.)
 
 | Table | Holds | Added in |
 |---|---|---|
-| `schema_migrations` | version, description, applied_at — which numbered steps ran | Phase 3 |
-| `threads` | id (public), bot_id, title, created_at | Phase 3 |
-| `entries` | thread_id, seq (1, 2, 3… per thread, no gaps), at, kind (`message` \| `event`), run_id (set exactly for events), payload JSON. **Append-only**: triggers refuse UPDATE/DELETE. User messages and bot events share this one ordered log. | Phase 3 |
-| `runs` | id, thread_id, harness_session_id (the CLI's own id), status, resume_cursor | Phase 4 |
-| `deliveries` | queue: message, recipient bot, status, order | Phase 5 |
-| `usage` | run_id, input_tokens, output_tokens, harness_id | Phase 4/5 |
-| `bots` | only if the yaml files need a cache; yaml stays the source of truth | Phase 8 |
+| `schema_migrations` | version, description, applied_at — which numbered steps ran | migration 1 |
+| `threads` | id (public), bot_id, title, created_at | migration 1 |
+| `entries` | thread_id, seq (1, 2, 3… per thread, no gaps), at, kind (`message` \| `event`), run_id (set exactly for events), payload JSON. **Append-only**: triggers refuse UPDATE/DELETE. User messages and bot events share this one ordered log. | migration 1 |
+| `runs` | id, thread_id, bot_id, harness, model, status (`running` / `done` / `aborted` / `error` / `max-steps` / `interrupted`), started/finished, token usage, harness_session_id (reserved for engine-native resume) | migration 2 |
+
+Not stored (deliberately, for v1): the waiting line (in memory; queued-but-not-started messages
+stay in the chat after a restart but are not re-run), and bots (the YAML files are the source of
+truth).
 
 Each table arrives with the phase that first uses it, as a new numbered migration
 (`providers/src/sqlite/database.ts`). A shipped migration is never edited.
@@ -221,6 +230,8 @@ Vite + React (own UI: dense, mail-like, own type and colour — not their compon
 8. opencode / prime-agent harnesses (stub → real)
 9. computer pane (placeholder screenshot)
 
+All steps are done (see `plan.md`, Phases 1–12).
+
 The detailed, phase-by-phase version of this order (with the safety phase before the outside
 programs) is `plan.md`.
 
@@ -229,7 +240,8 @@ programs) is `plan.md`.
 Confirmed by the user on 2026-09-30:
 
 - **D1** ✅ Electron desktop app from the start (thin shell, logic in the local server).
-- **D3** ✅ Open-source harnesses only: `generic-loop` real, `opencode` + `prime-agent` stub → real.
+- **D3** ✅ Open-source harnesses only: `generic-loop`, `opencode`, `prime-agent` (all real; stand-in
+  reply when a program is not installed).
   No Claude Code. Grok models via OpenCode Go, no Grok harness.
 - **D6** ✅ Default model source: OpenCode Go subscription. `generic-loop` calls it directly;
   `opencode` uses the same key. Orchestrator runs on `opencode`.

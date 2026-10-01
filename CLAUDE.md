@@ -151,6 +151,7 @@ Do not copy their source, CSS, assets, or component trees. UI should feel like a
 - Safety: bots may do almost everything without asking, but never break the Mac or the app
   (folder limits + block list, refuse and note in chat). See `docs/ARCHITECTURE.md` §7a.
 
-Phase 0 is done (see `docs/`). The build now follows **`plan.md`**, phase by phase: finish a
+Phase 0 is done (see `docs/`), and Phases 1–12 of **`plan.md`** are built. The build follows `plan.md`,
+phase by phase: finish a
 phase, tick it off, commit, report in plain words, then **wait for the user's OK** before the next
 phase. The user is partly technical: explain choices in plain language.

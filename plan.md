@@ -174,18 +174,21 @@ Must be finished **before** any outside program (OpenCode, Prime Agent) runs com
 **Check:** the rule list in plain words is in `docs/ARCHITECTURE.md` §7a; the block list is
 **(default — adjust)** in `providers/src/policy/safety-policy.ts`.
 
-## Phase 11 — OpenCode and Prime Agent
+## Phase 11 — OpenCode and Prime Agent ✅
 
 Goal: bots can run on the two open-source programs ("Way 2").
 
-- [ ] 11.1 One shared ACP connector (both programs speak ACP)
-- [ ] 11.2 OpenCode setup: start `opencode acp`, pass the Go key
-- [ ] 11.3 Prime Agent setup: start `prime-agent --mode acp`, use its `opencode-go` provider
-- [ ] 11.4 If a program is not installed: stand-in mode that says so clearly
-- [ ] 11.5 Their permission questions go through the Phase 10 rules
-- [ ] 11.6 Install guide for both programs on macOS
+- [x] 11.1 One shared ACP connector (both programs speak ACP)
+- [x] 11.2 OpenCode setup: start `opencode acp`, pass the Go key
+- [x] 11.3 Prime Agent setup: start `prime-agent --mode acp`, use its `opencode-go` provider
+- [x] 11.4 If a program is not installed: stand-in mode that says so clearly
+- [x] 11.5 Their permission questions go through the Phase 10 rules; on macOS they run inside the
+      sandbox; a small tool bridge (MCP) gives them `list_bots` / `ask_bot`
+- [x] 11.6 Install guide: `docs/engines.md`
 
-**Check:** on your Mac, the Orchestrator runs on OpenCode and Finance runs on Prime Agent.
+**Check:** on your Mac (with both installed and the key in `.env`), the Orchestrator runs on OpenCode
+and Finance on Prime Agent. Cloud-tested with the real programs on Linux; see `docs/engines.md`
+"Tested".
 
 ## Phase 12 — Computer pane (placeholder)
 

@@ -22,6 +22,7 @@ export function createApp(services: AppServices, options: AppOptions = {}): Hono
   const session = kernel.get(Services.session);
   const bots = kernel.get(Services.bots);
   const harnesses = kernel.get(Services.harnesses);
+  const tools = kernel.get(Services.tools);
   const app = new Hono();
 
   // Refuse requests that name another host: stops web pages elsewhere from reaching this API
@@ -221,6 +222,23 @@ export function createApp(services: AppServices, options: AppOptions = {}): Hono
       off();
     }),
   );
+
+  // Tool bridge for engines like OpenCode (apps/api/bin/mcp-bridge.mjs); needs a run token.
+  app.get("/api/internal/tools", (c) => {
+    const grant = services.runTokens.get(c.req.header("x-bench-token"));
+    if (!grant) return c.json({ error: "Invalid or expired token" }, 401);
+    return c.json(tools.schemas(grant.tools));
+  });
+
+  app.post("/api/internal/tools/:name", async (c) => {
+    const grant = services.runTokens.get(c.req.header("x-bench-token"));
+    if (!grant) return c.json({ error: "Invalid or expired token" }, 401);
+    const name = c.req.param("name");
+    if (!grant.tools.includes(name))
+      return c.json({ ok: false, output: `Tool "${name}" is not available to this bot` });
+    const args = await c.req.json().catch(() => ({}));
+    return c.json(await tools.run(name, args, grant.ctx));
+  });
 
   app.all("/api/*", (c) => c.json({ error: "Not found" }, 404));
 

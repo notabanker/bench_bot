@@ -1,7 +1,12 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type { DatabaseSync } from "node:sqlite";
-import { GenericLoopFactory, HarnessRegistry } from "@bench_bot/harnesses";
+import {
+  AcpHarnessFactory,
+  GenericLoopFactory,
+  HarnessRegistry,
+  type McpStdioServer,
+} from "@bench_bot/harnesses";
 import { Kernel } from "@bench_bot/kernel";
 import {
   EchoLlm,
@@ -12,11 +17,13 @@ import {
   RunStore,
   SafetyPolicy,
   SqliteSession,
+  sandboxed,
   ToolRegistry,
   YamlBotDirectory,
 } from "@bench_bot/providers";
 import {
   type BotDirectory,
+  type BotRunContext,
   type HarnessFactory,
   type LlmService,
   Services,
@@ -25,10 +32,14 @@ import { StaticBotDirectory } from "./bots-static.ts";
 import { type AppConfig, isOffline } from "./config.ts";
 import { BotDelegation, delegationTools } from "./delegation.ts";
 import { Hub, LiveSession } from "./hub.ts";
+import { RunTokens } from "./run-tokens.ts";
 import { BotRunner } from "./runner.ts";
 
 export interface AppServices {
   config: AppConfig;
+  runTokens: RunTokens;
+  /** Called once the server listens; engine tool bridges need the address. */
+  setApiUrl(url: string): void;
   policy: SafetyPolicy;
   /** Problems in bot files (when bots come from YAML). */
   botProblems(): { file: string; message: string }[];
@@ -91,8 +102,11 @@ export async function compose(
   });
   const tools = new ToolRegistry();
   for (const t of fsTools(fs, policy)) tools.register(t);
+  const runTokens = new RunTokens();
+  let apiUrl: string | null = null;
   const harnesses = new HarnessRegistry([
     new GenericLoopFactory({ llm, tools }),
+    ...acpHarnesses(config, policy, runTokens, () => apiUrl),
     ...(overrides.harnesses ?? []),
   ]);
   const yamlBots = new YamlBotDirectory({
@@ -137,6 +151,10 @@ export async function compose(
 
   return {
     config,
+    runTokens,
+    setApiUrl(url) {
+      apiUrl = url;
+    },
     policy,
     botProblems: () => (bots === yamlBots ? yamlBots.problems() : []),
     kernel,
@@ -151,4 +169,84 @@ export async function compose(
       db.close();
     },
   };
+}
+
+/** Tools that engines like OpenCode reach through the bench_bot bridge. */
+const BRIDGED_TOOLS = ["list_bots", "ask_bot"];
+const BRIDGE_SCRIPT = join(import.meta.dirname, "..", "bin", "mcp-bridge.mjs");
+let warnedUnconfined = false;
+
+/** OpenCode and Prime Agent: both speak ACP; on macOS they run inside the sandbox. */
+function acpHarnesses(
+  config: AppConfig,
+  policy: SafetyPolicy,
+  runTokens: RunTokens,
+  apiUrl: () => string | null,
+): HarnessFactory[] {
+  const env: Record<string, string> = config.apiKey ? { OPENCODE_API_KEY: config.apiKey } : {};
+  const wrap = (command: string, args: string[], ctx: BotRunContext) => {
+    const result = sandboxed(command, args, policy.sandboxPaths(ctx.workspacePath));
+    if (!result.confined && !warnedUnconfined) {
+      warnedUnconfined = true;
+      console.warn(
+        "bench_bot: no sandbox on this system; OpenCode/Prime Agent run without folder limits",
+      );
+    }
+    return result;
+  };
+  const mcpServers = (ctx: BotRunContext) => {
+    const allowed = ctx.toolPolicy.allowedTools.filter((t) => BRIDGED_TOOLS.includes(t));
+    const url = apiUrl();
+    if (allowed.length === 0 || !url) return { servers: [] as McpStdioServer[], dispose: () => {} };
+    const { token, revoke } = runTokens.issue(
+      {
+        botId: ctx.botId,
+        threadId: ctx.threadId,
+        runId: ctx.runId,
+        workspacePath: ctx.workspacePath,
+        chain: ctx.chain,
+      },
+      allowed,
+    );
+    const server: McpStdioServer = {
+      name: "bench_bot",
+      command: process.execPath,
+      args: [BRIDGE_SCRIPT],
+      env: [
+        { name: "BENCH_API_URL", value: url },
+        { name: "BENCH_TOOL_TOKEN", value: token },
+        // Inside the desktop app, process.execPath is Electron; this makes it act as plain Node.
+        ...(process.versions.electron ? [{ name: "ELECTRON_RUN_AS_NODE", value: "1" }] : []),
+      ],
+    };
+    return { servers: [server], dispose: revoke };
+  };
+  return [
+    new AcpHarnessFactory({
+      id: "opencode",
+      displayName: "OpenCode",
+      program: "opencode",
+      args: ["acp"],
+      ...(process.env.OPENCODE_PATH ? { programPath: process.env.OPENCODE_PATH } : {}),
+      env,
+      installHint:
+        "Install it with `curl -fsSL https://opencode.ai/install | bash` (or `npm i -g opencode-ai`), then send the message again. See docs/engines.md.",
+      policy,
+      wrap,
+      mcpServers,
+    }),
+    new AcpHarnessFactory({
+      id: "prime-agent",
+      displayName: "Prime Agent",
+      program: "prime-agent",
+      args: ["--mode", "acp"],
+      ...(process.env.PRIME_AGENT_PATH ? { programPath: process.env.PRIME_AGENT_PATH } : {}),
+      env,
+      installHint:
+        "Install it with `curl -fsSL https://app.primeintellect.ai/prime-agent/install.sh | sh`, then send the message again. See docs/engines.md.",
+      policy,
+      wrap,
+      mcpServers,
+    }),
+  ];
 }

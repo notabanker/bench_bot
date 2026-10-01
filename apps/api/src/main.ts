@@ -11,6 +11,7 @@ const app = createApp(services, { webDist: join(config.repoRoot, "apps", "web", 
 
 const server = serve({ fetch: app.fetch, hostname: config.host, port: config.port }, (info) => {
   const url = `http://${config.host}:${info.port}`;
+  services.setApiUrl(url);
   console.log(`bench_bot server on ${url}`);
   console.log(`data: ${config.dataDir}`);
   if (services.offline)

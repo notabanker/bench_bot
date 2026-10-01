@@ -102,17 +102,18 @@ live.
 **Check:** `pnpm start`, then `curl http://127.0.0.1:8787/api/bots`. Port 8787 and the data folder
 `~/Library/Application Support/bench_bot` are **(default — adjust)** via `BENCH_PORT` / `BENCH_DATA_DIR`.
 
-## Phase 6 — Chat window (web UI)
+## Phase 6 — Chat window (web UI) ✅
 
 Goal: something you can click and type into.
 
-- [ ] 6.1 React + Vite app
-- [ ] 6.2 Left: bot roster (like contacts). Middle: the thread. Bottom: the composer
-- [ ] 6.3 Answers appear live while the bot types; tool steps shown as small chips
-- [ ] 6.4 Our own look: dense, mail-like, own colours and font (not copied from the references)
-- [ ] 6.5 Screenshot of the result in the phase report
+- [x] 6.1 React + Vite app
+- [x] 6.2 Left: bot roster (like contacts). Middle: the thread. Bottom: the composer
+- [x] 6.3 Answers appear live while the bot types; tool steps shown as small chips
+- [x] 6.4 Our own look: dense, mail-like, own colours and font (not copied from the references)
+- [x] 6.5 Screenshot: `docs/screenshots/chat-window.png`
 
-**Check:** open it in your browser on your Mac and chat with a bot.
+**Check:** `pnpm build && pnpm start`, open http://127.0.0.1:8787 — or `pnpm dev` and open
+http://127.0.0.1:5173 for live-reloading UI work.
 
 ## Phase 7 — Desktop app (Electron, Mac)
 

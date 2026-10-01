@@ -40,6 +40,16 @@ pnpm ask --model deepseek-v4-flash "Hello"   # pick another OpenCode Go model
 
 Without a key, `pnpm ask` answers in offline echo mode.
 
+## Run the app
+
+```bash
+pnpm build        # build the chat window once
+pnpm start        # start the server, then open http://127.0.0.1:8787
+pnpm dev          # or: server + live-reloading window on http://127.0.0.1:5173
+```
+
+![bench_bot chat window](docs/screenshots/chat-window.png)
+
 ## Why
 
 - Learn the product shape of OpenBot / OpenMausBot by building it ourselves.

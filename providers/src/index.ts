@@ -12,6 +12,7 @@ export {
   SchemaTooNewError,
   schemaVersion,
 } from "./sqlite/database.ts";
+export { type RunRecord, type RunStatus, RunStore } from "./sqlite/run-store.ts";
 export {
   SqliteSession,
   type SqliteSessionOptions,

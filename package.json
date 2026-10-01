@@ -18,7 +18,8 @@
     "start": "pnpm --filter @bench_bot/api start",
     "dev:web": "pnpm --filter @bench_bot/web dev",
     "dev": "pnpm --parallel --filter @bench_bot/api --filter @bench_bot/web dev",
-    "build": "pnpm --filter @bench_bot/web build"
+    "build": "pnpm --filter @bench_bot/web build",
+    "dev:desktop": "pnpm build && pnpm --filter @bench_bot/desktop start"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
@@ -26,5 +27,11 @@
     "tsx": "4.23.15",
     "typescript": "7.0.2",
     "vitest": "5.0.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild"
+    ]
   }
 }

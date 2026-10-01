@@ -2,5 +2,14 @@
   "name": "@bench_bot/desktop",
   "private": true,
   "type": "module",
-  "exports": "./src/index.ts"
+  "main": "src/main.mjs",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "44.5.1"
+  },
+  "dependencies": {
+    "@bench_bot/api": "workspace:*"
+  }
 }

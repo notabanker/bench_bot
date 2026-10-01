@@ -27,6 +27,7 @@ export function Roster(props: {
   selectedId: string | null;
   onSelect: (id: string) => void;
   offline: boolean;
+  problems: { file: string; message: string }[];
 }) {
   const sections = new Map<string, BotView[]>();
   for (const bot of props.bots) {
@@ -68,6 +69,16 @@ export function Roster(props: {
           </div>
         ))}
         {props.bots.length === 0 && <p className="empty">No bots yet.</p>}
+        {props.problems.length > 0 && (
+          <div className="problems">
+            <div className="section-label">Bot file problems</div>
+            {props.problems.map((p) => (
+              <div key={p.file} className="note note-blocked">
+                <code>{p.file}</code>: {p.message}
+              </div>
+            ))}
+          </div>
+        )}
       </nav>
     </aside>
   );

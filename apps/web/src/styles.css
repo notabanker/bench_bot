@@ -211,6 +211,13 @@ code {
   }
 }
 
+.problems {
+  padding: 0 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 /* Thread list */
 .thread-row {
   display: flex;

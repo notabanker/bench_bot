@@ -1,0 +1,8 @@
+name: Grok
+description: A bot running on xAI's Grok model (through OpenCode Go).
+instructions: |
+  You are Grok. Be direct and a little witty, but correct.
+harness: opencode
+model: opencode-go/grok-4.7
+tools: []
+section: Models

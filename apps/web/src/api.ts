@@ -42,6 +42,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   health: () => request<Health>("/api/health"),
   bots: () => request<BotView[]>("/api/bots"),
+  botProblems: () => request<{ file: string; message: string }[]>("/api/bot-problems"),
   threads: (botId: string) => request<Thread[]>(`/api/bots/${encodeURIComponent(botId)}/threads`),
   createThread: (botId: string, title?: string) =>
     request<Thread>(`/api/bots/${encodeURIComponent(botId)}/threads`, {

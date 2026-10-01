@@ -5,7 +5,9 @@ import { api, type BotView, type Health, type StoredEntry, type Thread } from ".
 export function useBots() {
   const [bots, setBots] = useState<BotView[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [problems, setProblems] = useState<{ file: string; message: string }[]>([]);
   const refresh = useCallback(() => {
+    api.botProblems().then(setProblems, () => {});
     api
       .bots()
       .then((b) => {
@@ -30,7 +32,7 @@ export function useBots() {
     };
   }, [refresh]);
 
-  return { bots, error, refresh };
+  return { bots, problems, error, refresh };
 }
 
 export function useHealth() {

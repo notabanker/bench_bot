@@ -73,6 +73,11 @@ export function createApp(services: AppServices, options: AppOptions = {}): Hono
 
   app.get("/api/bots", async (c) => c.json((await bots.list()).map(botView)));
 
+  app.get("/api/bot-problems", async (c) => {
+    await bots.list(); // Refreshes the problem list.
+    return c.json(services.botProblems());
+  });
+
   app.get("/api/bots/:botId", async (c) => {
     const bot = await bots.get(c.req.param("botId"));
     return bot ? c.json(botView(bot)) : c.json({ error: "Unknown bot" }, 404);

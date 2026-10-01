@@ -1,3 +1,8 @@
+export {
+  type BotFileProblem,
+  YamlBotDirectory,
+  type YamlBotDirectoryOptions,
+} from "./bots/yaml-bots.ts";
 export { LocalFs, MAX_READ_BYTES, OutsideWorkspaceError } from "./fs/local-fs.ts";
 export {
   OPENCODE_GO_BASE_URL,

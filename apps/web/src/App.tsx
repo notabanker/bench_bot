@@ -23,7 +23,7 @@ function loadUi(): UiState {
 
 export function App() {
   const health = useHealth();
-  const { bots, error } = useBots();
+  const { bots, problems, error } = useBots();
   const [ui, setUi] = useState<UiState>(loadUi);
   const [threadId, setThreadId] = useState<string | null>(null);
   const botId = ui.botId && bots.some((b) => b.id === ui.botId) ? ui.botId : (bots[0]?.id ?? null);
@@ -64,6 +64,7 @@ export function App() {
         bots={bots}
         selectedId={botId}
         offline={!!health?.offline}
+        problems={problems}
         onSelect={(id) => {
           setUi((u) => ({ ...u, botId: id }));
           setThreadId(null);

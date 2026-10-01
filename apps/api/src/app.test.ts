@@ -239,3 +239,39 @@ describe("API", () => {
     });
   });
 });
+
+describe("API with bot files", () => {
+  it("serves bots from YAML files and reports broken files", async () => {
+    const { mkdirSync, writeFileSync } = await import("node:fs");
+    const dataDir = mkdtempSync(join(tmpdir(), "bench-api-yaml-"));
+    cleanups.push(() => rmSync(dataDir, { recursive: true, force: true }));
+    const botsDir = join(dataDir, "bots");
+    mkdirSync(botsDir);
+    writeFileSync(
+      join(botsDir, "helper.yaml"),
+      "name: Helper\ninstructions: Help.\nharness: generic-loop\n",
+    );
+    writeFileSync(join(botsDir, "broken.yaml"), "name: Broken\n");
+    const config = {
+      repoRoot: dataDir,
+      dataDir,
+      botsDir,
+      llmBaseUrl: "x",
+      apiKey: undefined,
+      defaultModel: "m",
+      host: "127.0.0.1",
+      port: 0,
+    };
+    const services = await compose(config, { llm: new ScriptedLlm([]) });
+    cleanups.push(() => services.close());
+    const app = createApp(services);
+
+    const bots = (await (await app.request("http://localhost/api/bots")).json()) as Json;
+    expect(bots.map((b: { id: string }) => b.id)).toEqual(["helper"]);
+    expect(bots[0].workspacePath).toBeUndefined();
+    const problems = (await (
+      await app.request("http://localhost/api/bot-problems")
+    ).json()) as Json;
+    expect(problems).toEqual([{ file: "broken.yaml", message: '"instructions" is missing' }]);
+  });
+});

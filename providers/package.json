@@ -4,6 +4,7 @@
   "type": "module",
   "exports": "./src/index.ts",
   "dependencies": {
-    "@bench_bot/services": "workspace:*"
+    "@bench_bot/services": "workspace:*",
+    "yaml": "2.9.1"
   }
 }

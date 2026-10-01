@@ -11,6 +11,7 @@ import {
   RunStore,
   SqliteSession,
   ToolRegistry,
+  YamlBotDirectory,
 } from "@bench_bot/providers";
 import {
   type BotDirectory,
@@ -25,6 +26,8 @@ import { BotRunner } from "./runner.ts";
 
 export interface AppServices {
   config: AppConfig;
+  /** Problems in bot files (when bots come from YAML). */
+  botProblems(): { file: string; message: string }[];
   kernel: Kernel;
   runner: BotRunner;
   runs: RunStore;
@@ -83,7 +86,14 @@ export async function compose(
     new GenericLoopFactory({ llm, tools }),
     ...(overrides.harnesses ?? []),
   ]);
-  const bots = overrides.bots ?? fallbackBots(config);
+  const yamlBots = new YamlBotDirectory({
+    botsDir: config.botsDir,
+    workspacesRoot: join(config.dataDir, "workspaces"),
+    defaultModel: config.defaultModel,
+  });
+  // Bot files are the source of truth; the built-in Assistant only fills an empty folder.
+  const bots: BotDirectory =
+    overrides.bots ?? ((await yamlBots.list()).length > 0 ? yamlBots : fallbackBots(config));
   const runner = new BotRunner({ bots, harnesses, session, runs, hub });
 
   const kernel = new Kernel();
@@ -114,6 +124,7 @@ export async function compose(
 
   return {
     config,
+    botProblems: () => (bots === yamlBots ? yamlBots.problems() : []),
     kernel,
     runner,
     runs,

@@ -72,9 +72,7 @@ export class BotRunner implements QueueService {
   async abortThread(threadId: string): Promise<void> {
     for (const [botId, queue] of this.#queues) {
       const kept = queue.filter((d) => d.threadId !== threadId);
-      for (const dropped of queue.filter((d) => d.threadId === threadId)) {
-        this.#settle(dropped.id, { runId: "", reason: "aborted", text: "" });
-      }
+      for (const dropped of queue.filter((d) => d.threadId === threadId)) await this.#drop(dropped);
       this.#queues.set(botId, kept);
     }
     const running = [...this.#active.values()].filter((a) => a.delivery.threadId === threadId);
@@ -110,8 +108,7 @@ export class BotRunner implements QueueService {
   /** Stops every running harness (app shutdown). */
   async abortAll(): Promise<void> {
     for (const queue of this.#queues.values()) {
-      for (const d of queue.splice(0))
-        this.#settle(d.id, { runId: "", reason: "aborted", text: "" });
+      for (const d of queue.splice(0)) await this.#drop(d);
     }
     await Promise.all([...this.#active.values()].map((a) => a.harness?.abort()));
   }
@@ -137,6 +134,21 @@ export class BotRunner implements QueueService {
       this.#waiters.set(deliveryId, waiter);
     }
     return waiter;
+  }
+
+  /**
+   * A waiting message that will not run: tell the chat (so it does not look busy forever) and
+   * anyone waiting for it.
+   */
+  async #drop(delivery: Delivery): Promise<void> {
+    const runId = `run_dropped_${delivery.id}`;
+    const note = async (event: BotEvent) =>
+      this.#deps.session
+        .append(delivery.threadId, { kind: "event", runId, event })
+        .catch(() => undefined);
+    await note({ type: "error", message: "Stopped before it started." });
+    await note({ type: "finish", reason: "aborted" });
+    this.#settle(delivery.id, { runId: "", reason: "aborted", text: "" });
   }
 
   #settle(deliveryId: string, outcome: RunOutcome): void {

@@ -22,8 +22,15 @@ export function Conversation(props: {
 }) {
   const items = buildTimeline(props.entries);
   const lastTurn = [...items].reverse().find((i) => i.kind === "turn");
-  const lastIsUser = items.at(-1)?.kind === "user";
-  const working = (lastTurn?.kind === "turn" && lastTurn.finish === null) || lastIsUser;
+  const last = items.at(-1);
+  // A message waits for an answer while the bot is busy or it was only just sent; an old
+  // unanswered message (e.g. dropped by a crash) must not look busy forever.
+  const waitingForAnswer =
+    last?.kind === "user" &&
+    (props.bot?.status.running ||
+      (props.bot?.status.queued ?? 0) > 0 ||
+      Date.now() - Date.parse(last.at) < 15_000);
+  const working = (lastTurn?.kind === "turn" && lastTurn.finish === null) || !!waitingForAnswer;
   const scroller = useRef<HTMLDivElement>(null);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll whenever new entries arrive

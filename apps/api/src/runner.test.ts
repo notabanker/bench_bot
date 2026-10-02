@@ -174,6 +174,16 @@ describe("BotRunner", () => {
     await runner.abortThread(t.id);
     expect(await runner.whenDone("d_running")).toMatchObject({ reason: "aborted" });
     expect(await runner.whenDone("d_queued")).toEqual({ runId: "", reason: "aborted", text: "" });
+    // The dropped message gets a visible note, so the chat does not look busy forever.
+    const entries = await session.read(t.id);
+    expect(
+      entries
+        .filter((e) => e.kind === "event" && e.runId === "run_dropped_d_queued")
+        .map((e) => e.kind === "event" && e.event),
+    ).toEqual([
+      { type: "error", message: "Stopped before it started." },
+      { type: "finish", reason: "aborted" },
+    ]);
     expect(runs.listForThread(t.id).map((r) => r.status)).toEqual(["aborted"]);
   });
 

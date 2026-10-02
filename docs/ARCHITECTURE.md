@@ -211,6 +211,10 @@ Honest limits:
   logged). Apple labels `sandbox-exec` deprecated, but it ships with current macOS and OpenBot
   relies on it too.
 - Reading is not limited: a bot can read any file your user can read.
+- OpenCode only asks before commands/edits because bench_bot configures it to
+  (`OPENCODE_PERMISSIONS` in `apps/api/src/compose.ts`). Prime Agent never asks; for it only the
+  sandbox applies. Shell tricks such as `echo x > /etc/file` are not in the block list; on macOS
+  the sandbox stops them, on Linux nothing does.
 
 ## 7b. Phone mode
 

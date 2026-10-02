@@ -44,6 +44,11 @@ install it. Nothing crashes.
   (`docs/ARCHITECTURE.md` §7a). When the program asks "may I run this command / edit this file?",
   bench_bot answers with the safety rules: allowed things run without asking you; blocked things
   are refused and shown as a "Blocked" note in the chat.
+- **OpenCode asks first:** bench_bot starts OpenCode with `permission: {bash: "ask", edit: "ask"}`
+  (via `OPENCODE_CONFIG_CONTENT`), so every command and file edit goes through the safety rules.
+  Without this, OpenCode runs commands without asking (found in testing: it ran `sudo whoami`).
+- **Prime Agent never asks:** it runs its tools as Python code inside its own process, so the
+  command block list cannot see them. Only the macOS sandbox (folder limits) protects there.
 - **Teammates:** if the bot's `tools` include `list_bots` / `ask_bot`, the program gets a small
   bench_bot tool server (`apps/api/bin/mcp-bridge.mjs`, MCP over stdio) so it can ask other bots.
   It is authenticated with a one-time token that expires when the run ends.

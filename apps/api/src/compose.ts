@@ -171,6 +171,9 @@ export async function compose(
   };
 }
 
+/** OpenCode config layer: send every command and file edit to bench_bot's safety policy first. */
+export const OPENCODE_PERMISSIONS = { permission: { bash: "ask", edit: "ask" } };
+
 /** Tools that engines like OpenCode reach through the bench_bot bridge. */
 const BRIDGED_TOOLS = ["list_bots", "ask_bot"];
 const BRIDGE_SCRIPT = join(import.meta.dirname, "..", "bin", "mcp-bridge.mjs");
@@ -228,7 +231,10 @@ function acpHarnesses(
       program: "opencode",
       args: ["acp"],
       ...(process.env.OPENCODE_PATH ? { programPath: process.env.OPENCODE_PATH } : {}),
-      env,
+      // OpenCode runs commands and edits files without asking by default, which would bypass the
+      // safety policy. "ask" makes it send each one to bench_bot, where the policy answers
+      // automatically (allowed → runs, blocked → refused + note). No pop-ups for the user.
+      env: { ...env, OPENCODE_CONFIG_CONTENT: JSON.stringify(OPENCODE_PERMISSIONS) },
       installHint:
         "Install it with `curl -fsSL https://opencode.ai/install | bash` (or `npm i -g opencode-ai`), then send the message again. See docs/engines.md.",
       policy,

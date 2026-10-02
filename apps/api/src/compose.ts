@@ -153,6 +153,15 @@ export async function compose(
     });
   }
 
+  // Prime Agent sessions orphaned by a crash keep working with nobody attached: stop them once at
+  // start-up (in the background, so start-up never waits on it).
+  void (async () => {
+    for (const bot of await bots.list().catch(() => [])) {
+      if (bot.harness === "prime-agent")
+        await stopIdlePrimeAgentSessions(bot.workspacePath).catch(() => {});
+    }
+  })();
+
   return {
     config,
     runTokens,
@@ -267,7 +276,11 @@ function acpHarnesses(
 
 const run = promisify(execFile);
 
-/** `prime-agent stop` for every idle, unattached Prime Agent session whose folder is `workspace`. */
+/**
+ * `prime-agent stop` for every Prime Agent session in `workspace` that no client is attached to.
+ * Only bench_bot uses a bot's workspace and runs one turn per bot at a time, so such a session is a
+ * leftover (finished run, or orphaned by a crash).
+ */
 export async function stopIdlePrimeAgentSessions(workspace: string): Promise<void> {
   const program = findProgram("prime-agent", process.env.PRIME_AGENT_PATH);
   if (!program) return;
@@ -282,7 +295,7 @@ export async function stopIdlePrimeAgentSessions(workspace: string): Promise<voi
   const { stdout } = await run(program, ["list", "--json"], { timeout: 20_000 });
   const sessions = (JSON.parse(stdout) as { sessions?: PrimeSession[] }).sessions ?? [];
   for (const s of sessions) {
-    if (real(s.cwd) === folder && s.attachedClients === 0 && s.activity === "idle") {
+    if (real(s.cwd) === folder && s.attachedClients === 0) {
       await run(program, ["stop", s.id], { timeout: 20_000 }).catch(() => {});
     }
   }
@@ -292,5 +305,4 @@ interface PrimeSession {
   id: string;
   cwd: string;
   attachedClients: number;
-  activity: string;
 }

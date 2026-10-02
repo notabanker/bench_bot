@@ -205,3 +205,13 @@ describe("matchModel", () => {
     expect(matchModel(prime, "gpt-unknown")).toBeUndefined();
   });
 });
+
+describe("after a run", () => {
+  it("calls the clean-up hook once the engine has exited", async () => {
+    const calls: string[] = [];
+    const { run } = await setup({ afterRun: async (ctx) => void calls.push(ctx.botId) });
+    await run("hello");
+    for (let i = 0; calls.length === 0 && i < 100; i++) await new Promise((r) => setTimeout(r, 20));
+    expect(calls).toEqual(["bot"]);
+  });
+});

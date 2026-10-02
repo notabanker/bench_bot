@@ -1,8 +1,12 @@
+import { execFile } from "node:child_process";
+import { realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type { DatabaseSync } from "node:sqlite";
+import { promisify } from "node:util";
 import {
   AcpHarnessFactory,
+  findProgram,
   GenericLoopFactory,
   HarnessRegistry,
   type McpStdioServer,
@@ -244,6 +248,10 @@ function acpHarnesses(
     new AcpHarnessFactory({
       id: "prime-agent",
       displayName: "Prime Agent",
+      // Prime Agent 0.9.8 keeps one worker per ACP session alive even after session/close (found
+      // in testing). Stop the idle sessions it holds in this bot's private folder; the user's own
+      // Prime Agent sessions elsewhere are not touched.
+      afterRun: (ctx) => stopIdlePrimeAgentSessions(ctx.workspacePath),
       program: "prime-agent",
       args: ["--mode", "acp"],
       ...(process.env.PRIME_AGENT_PATH ? { programPath: process.env.PRIME_AGENT_PATH } : {}),
@@ -255,4 +263,34 @@ function acpHarnesses(
       mcpServers,
     }),
   ];
+}
+
+const run = promisify(execFile);
+
+/** `prime-agent stop` for every idle, unattached Prime Agent session whose folder is `workspace`. */
+export async function stopIdlePrimeAgentSessions(workspace: string): Promise<void> {
+  const program = findProgram("prime-agent", process.env.PRIME_AGENT_PATH);
+  if (!program) return;
+  const real = (p: string) => {
+    try {
+      return realpathSync(p);
+    } catch {
+      return p;
+    }
+  };
+  const folder = real(workspace);
+  const { stdout } = await run(program, ["list", "--json"], { timeout: 20_000 });
+  const sessions = (JSON.parse(stdout) as { sessions?: PrimeSession[] }).sessions ?? [];
+  for (const s of sessions) {
+    if (real(s.cwd) === folder && s.attachedClients === 0 && s.activity === "idle") {
+      await run(program, ["stop", s.id], { timeout: 20_000 }).catch(() => {});
+    }
+  }
+}
+
+interface PrimeSession {
+  id: string;
+  cwd: string;
+  attachedClients: number;
+  activity: string;
 }

@@ -48,6 +48,8 @@ export interface AcpHarnessOptions {
   wrap?: (command: string, args: string[], ctx: BotRunContext) => WrappedCommand;
   /** MCP servers to hand the engine for this run (our list_bots/ask_bot bridge), plus cleanup. */
   mcpServers?: (ctx: BotRunContext) => { servers: McpStdioServer[]; dispose: () => void };
+  /** Runs after the engine has exited (e.g. to stop sessions an engine keeps alive by itself). */
+  afterRun?: (ctx: BotRunContext) => Promise<void>;
   /** Older chat entries included as context in a fresh session. */
   historyLimit?: number;
   /** For tests: skip the PATH lookup. */
@@ -55,8 +57,7 @@ export interface AcpHarnessOptions {
 }
 
 const INIT_TIMEOUT_MS = 60_000;
-const CANCEL_GRACE_MS = 5_000;
-const CLOSE_TIMEOUT_MS = 3_000;
+const CLOSE_TIMEOUT_MS = 10_000;
 const MAX_TOOL_OUTPUT = 4_000;
 
 /** Where programs installed by Homebrew, npm or curl scripts usually end up on a Mac. */
@@ -170,14 +171,10 @@ class AcpHarness implements Harness {
   async abort(): Promise<void> {
     if (this.#aborted) return;
     this.#aborted = true;
-    if (this.#rpc && this.#sessionId) {
+    // Cancel the turn; the program itself is ended by #cleanup once the stream closes.
+    if (this.#rpc && this.#sessionId)
       this.#rpc.notify("session/cancel", { sessionId: this.#sessionId });
-      // Give the engine a moment to stop on its own, then end it.
-      const rpc = this.#rpc;
-      setTimeout(() => rpc.kill("SIGKILL"), CANCEL_GRACE_MS).unref();
-    } else {
-      this.#rpc?.kill();
-    }
+    else this.#rpc?.kill();
     this.#events.push({ type: "finish", reason: "aborted" });
   }
 
@@ -199,7 +196,8 @@ class AcpHarness implements Harness {
     try {
       yield* this.#events.drain();
     } finally {
-      await this.#cleanup();
+      // In the background: the run is already finished for the user and the queue moves on.
+      void this.#cleanup();
     }
   }
 
@@ -427,7 +425,14 @@ class AcpHarness implements Harness {
         .request("session/close", { sessionId: this.#sessionId }, CLOSE_TIMEOUT_MS)
         .catch(() => {});
     }
-    rpc.kill();
+    await rpc.shutdown();
+    if (this.#ctx && this.#o.afterRun) {
+      await this.#o
+        .afterRun(this.#ctx)
+        .catch((error: unknown) =>
+          console.warn(`bench_bot: ${this.#o.displayName} clean-up failed:`, error),
+        );
+    }
   }
 }
 

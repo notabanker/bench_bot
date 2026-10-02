@@ -55,8 +55,12 @@ install it. Nothing crashes.
 - **Stop** sends the program a cancel request and ends it after 5 seconds if needed. When a run
   ends, bench_bot asks the engine to close the session first, then stops the program.
 - **Prime Agent keeps a background service** (its own design: sessions survive a closed terminal).
-  After bench_bot runs, `prime-agent status` shows it; `prime-agent shutdown` stops it. bench_bot
-  does not stop it for you, because you may be using Prime Agent yourself at the same time.
+  `prime-agent status` shows it; `prime-agent shutdown` stops it. bench_bot does not stop the
+  service, because you may be using Prime Agent yourself at the same time.
+- **Prime Agent 0.9.8 leaks a worker per session** (found in testing: one worker + one Python
+  helper stay alive even after `session/close`). After every run bench_bot therefore runs
+  `prime-agent stop` for the idle sessions in **that bot's own folder** only. Verified: no
+  leftovers after runs; a Prime Agent session in another folder is left alone.
 - **Model ids:** OpenCode writes `opencode-go/kimi-k3`, Prime Agent `["opencode-go","kimi-k3"]`;
   bench_bot understands both, so bot files always use `opencode-go/<model>`. Without
   `OPENCODE_API_KEY`, Prime Agent does not offer the OpenCode Go models at all.

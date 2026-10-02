@@ -97,6 +97,25 @@ export class JsonRpcConnection {
     if (!this.#closed) this.#child.kill(signal);
   }
 
+  /**
+   * Ends the program politely: closes its input (ACP agents clean up on end of input), waits,
+   * then SIGTERM, then SIGKILL. Resolves once it has exited.
+   */
+  async shutdown(graceMs = 5_000): Promise<void> {
+    if (this.#closed) return;
+    const exited = (ms: number) =>
+      Promise.race([
+        this.exited.then(() => true),
+        new Promise<boolean>((r) => setTimeout(() => r(false), ms).unref()),
+      ]);
+    this.#child.stdin.end();
+    if (await exited(graceMs)) return;
+    this.#child.kill("SIGTERM");
+    if (await exited(2_000)) return;
+    this.#child.kill("SIGKILL");
+    await exited(2_000);
+  }
+
   #write(message: unknown): void {
     this.#child.stdin.write(`${JSON.stringify(message)}\n`);
   }
